@@ -5,10 +5,11 @@ module keccakf1600_statepermutate(
 	output reg [63:0] dout [24:0]);
 
 	reg [63:0] state [24:0];
-	reg state_round[5:0];
+	reg [63:0] next_state [24:0];
+	reg [4:0] state_round;
+	reg [4:0] next_state_round;
 	reg [63:0] const_1;
 	reg [63:0] const_2;
-	reg k_enable;
 
 localparam [63:0] round_constants[23:0] = {
     64'h0000000000000001,
@@ -37,23 +38,31 @@ localparam [63:0] round_constants[23:0] = {
     64'h8000000080008008
 };
 
-keccak_round k_round (.clk(k_enable), .instate(state), .round_constant1(const_1), .round_constant2(const_2), .outstate(state));
+keccak_round k_round (.instate(state), .round_constant1(const_1), .round_constant2(const_2), .outstate(next_state));
 
-	always @ (posedge clk) begin
+	always_ff @ (posedge clk) begin
 		if (!rstn)
 		begin
-			state = din;
-			const_1 = round_constants[state_round];
-			const_2 = round_constants[state_round+1];
-			k_enable = 1;
-			state_round += 2;
-			k_enable = 0;
+			state_round <=  next_state_round;
+			state <= next_state;
 		end
+	end
+
+	always_latch begin
+			const_1 = round_constants[state_round];
+			const_2 = round_constants[state_round+5'd1];
+			if (state_round == 5'd24) begin
+				next_state_round = 0;
+				state = din;
+			end else if (state_round == 5'd23) begin
+				dout = state;
+				next_state_round = state_round + 5'd2;
+			end else
+				next_state_round = state_round + 5'd2;
 	end
 endmodule
 
 module keccak_round(
-	input clk,
 	input [63:0] instate [24:0],
 	input [63:0] round_constant1,
 	input [63:0] round_constant2,
@@ -136,7 +145,7 @@ reg [63:0] e_state [24:0];
 `define ESO e_state[23]
 `define ESU e_state[24]
 
-always @ (posedge clk) begin
+always_comb begin
 	state = instate;
 
 	// prepareTheta
