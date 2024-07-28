@@ -50,8 +50,8 @@ module x3q16 (
 	);
 
 	integer i;
-	reg [1:0] mode; // 00 is instruction, 01 is data in next address, 10 is data from address, 11 is uart sending.
-	reg jump_con;
+	reg [1:0] mode; // 00 is instruction, 01 is data in next address, 10 is data from address, 11 is reg repo.
+	reg jump_con, mem_halt;
 	always @(posedge clk or posedge reset)
 	begin
 		if (reset) begin
@@ -69,6 +69,7 @@ module x3q16 (
 			uart_send <= 1'b0;
 			mode <= 2'b0;
 			jump_con <= 1'b0;
+			mem_halt <= 1'b0;
 		end else begin
 
 			//Pre cycle operations
@@ -81,7 +82,7 @@ module x3q16 (
 			if (memory_critical) begin
 				registers[1][1] <= 1'b1;
 			end
-			registers[1][4] <= eF;
+			registers[1][3] <= eF;
 			registers[1][2] <= gaF;
 			registers[0] <= 16'b0;
 			request_type <= 2'b00;
@@ -90,30 +91,45 @@ module x3q16 (
 			uart_out <= 16'b0;
 
 			//Operations
-			if ((memory_ready) & ~(last_address == current_address)) begin
+			if (((memory_ready) & ~(last_address == current_address)) | mem_halt) begin
+				mem_halt <= 1'b0;
 				last_address <= current_address;
-				if (mode == 2'b0) begin
+				if (mode == 2'b00) begin
 					current_instruction <= memory_in;
 				end
 				case (opcode)
 					4'b0000: begin end//No Operation
 					4'b0001: begin //ALU
-						alu_mode <= settings;
-						alu_a <= registers[reg1];
-						alu_b <= registers[reg2];
-						registers[1][3] <= alu_result == 16'h0000;
-						if (reg_out != 3'b000) begin
-							registers[reg_out] <= alu_result;
-						end
+						case (mode)
+							2'b00: begin
+								alu_mode <= settings;
+								alu_a <= registers[reg1];
+								alu_b <= registers[reg2];
+								mem_halt <= 1'b1;
+								mode <= 2'b11;
+							end
+							2'b11: begin
+								if (reg_out != 3'b000) begin
+									registers[reg_out] <= alu_result;
+								end
+							end
+						endcase
 					end
 					4'b0010: begin //ALUI
-						alu_mode <= settings[0] ? 3'b010 : 3'b000;
-						alu_a <= registers[2];
-						alu_b <= {8'h00, imm_lower};
-						registers[1][3] <= alu_result == 16'h0000;
-						if (reg_out != 3'b000) begin
-							registers[current_instruction[7:5]] <= alu_result;
-						end
+					case (mode)
+							2'b00: begin
+								alu_mode <= settings[0] ? 3'b010 : 3'b000;
+								alu_a <= registers[2];
+								alu_b <= {8'h00, imm_lower};
+								mem_halt <= 1'b1;
+								mode <= 2'b11;
+							end
+							2'b11: begin
+								if (reg_out != 3'b000) begin
+									registers[current_instruction[7:5]] <= alu_result;
+								end
+							end
+						endcase
 					end
 					4'b0100: begin //Jump
 						if (settings == 3'b110) begin
@@ -129,12 +145,12 @@ module x3q16 (
 							jump_con <= 1'b0;
 							case (settings) 
 								3'b000: jump_con <= 1'b1;
-								3'b001: jump_con <= registers[1][3];
+								3'b001: jump_con <= alu_result == 16'h0000;
 								3'b010: jump_con <= registers[1][2];
 								3'b011: jump_con <= ~registers[1][2];
 								3'b100: jump_con <= registers[1][1];
 								3'b101: jump_con <= registers[1][0];
-								3'b111: jump_con <= registers[1][4];
+								3'b111: jump_con <= registers[1][3];
 							endcase
 							if (jump_con) begin
 								request_address <= registers[reg1];
@@ -195,9 +211,10 @@ module x3q16 (
 						uart_send <= 1'b1;
 					end
 				endcase
-				request <= 1'b1;
+				if (~mem_halt) begin
+					request <= 1'b1;
+				end
 			end
 		end
 	end
 endmodule
-
