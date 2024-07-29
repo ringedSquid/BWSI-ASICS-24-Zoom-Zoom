@@ -1,0 +1,3 @@
+//req_addr, req_type, req, data_out, mem_in, mem_ready, write_complete
+0000_1_1_abcd_0000_0
+0000_0_1_0000_abcd_1
