@@ -1,3 +1,5 @@
+`include "ram_16bit.v"
+
 module memory_control (
     input wire clk,             // clock signal
     input wire reset,           // reset signal
@@ -22,8 +24,10 @@ module memory_control (
         .we(ram_we),
         .oe(ram_oe),
         .addr(current_address),
-        .data(ram_we ? data_to_ram : 16'bz) 
+        .data(ram_data)
     );
+
+    assign ram_data = ram_we ? data_to_ram : 16'bz;
 
     always @(posedge clk or posedge reset) begin
         if (reset) begin
@@ -32,10 +36,11 @@ module memory_control (
             ram_we <= 1'b0;
             ram_oe <= 1'b0;
             current_address <= 16'b0;
-        end else begin
+        end 
+
+	else begin
             if (request) begin
                 current_address <= request_address;
-
                 if (request_type) begin // write request
                     ram_we <= 1'b1;
                     ram_oe <= 1'b0;
@@ -43,25 +48,23 @@ module memory_control (
                     memory_ready <= 1'b0;
                     write_complete <= 1'b0;
                 end 
-                
                 else begin // read request
                     ram_we <= 1'b0;
                     ram_oe <= 1'b1;
                     memory_ready <= 1'b0;
                     write_complete <= 1'b0;
                 end
-            end else begin
+            end 
+	    else begin
                 if (ram_we) begin // write complete
                     write_complete <= 1'b1;
                     ram_we <= 1'b0;
                 end 
-                
                 else if (ram_oe) begin // read complete
                     memory_ready <= 1'b1;
                     memory_in <= ram_data;
                     ram_oe <= 1'b0;
                 end 
-                
                 else begin // nothing
                     memory_ready <= 1'b0;
                     write_complete <= 1'b0;
