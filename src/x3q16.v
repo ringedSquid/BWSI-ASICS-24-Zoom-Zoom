@@ -79,22 +79,20 @@ module x3q16 (
 				registers[1][1] <= 1'b1;
 			end
 			registers[0] <= 16'b0;
-			registers[1][3] <= eF;
-			registers[1][2] <= gaF;
-			registers[0] <= 16'b0;
 			request <= 1'b0;
 
 			// execution
 			case (execution_stage)
-				3'b000: begin // load/setup operation
+				3'b000: begin // load/setup operation stage 1
 					if (memory_ready) begin
 						current_instruction <= memory_in;
 						current_address <= request_address;
-						request_address <= request_address + 1'b1;
-						execution_stage <= 3'b001;
+						alu_a <= request_address;
+						alu_b <= 16'h1;
+						execution_stage <= 3'b101;
 					end
 				end
-				3'b001: begin //operation
+				3'b001: begin //operation stage 1
 					case (opcode)
 						4'b0000: execution_stage <= 3'b100; //No Operation
 						4'b0001: begin //ALU
@@ -113,7 +111,7 @@ module x3q16 (
 							if (reg_out != 3'b000) registers[reg_out] <= current_address;
 							if (settings == 3'b110) request <= 1'b1; else case (settings) 
 								3'b000: jump_con <= 1'b1;
-								3'b001: jump_con <= alu_result == 16'h0000;
+								3'b001: jump_con <= registers[1][4];
 								3'b010: jump_con <= registers[1][2];
 								3'b011: jump_con <= ~registers[1][2];
 								3'b100: jump_con <= registers[1][1];
@@ -124,7 +122,11 @@ module x3q16 (
 							execution_stage <= 3'b010;
 						end
 						4'b0101: begin //Load
-							if (settings[0]) request_address <= registers[reg1];
+							alu_a <= current_address;
+							if (settings[0]) begin
+								request_address <= registers[reg1];
+								alu_b <= 16'h1;
+							end else alu_b <= 16'h2;
 							request <= 1'b1;
 							execution_stage <= 3'b010;
 						end
@@ -133,7 +135,8 @@ module x3q16 (
 							if (settings[0]) begin
 								request_address <= registers[reg1];
 								request_type <= 1'b1;
-							end
+								alu_a <= 16'h1;
+							end else alu_b <= 16'h2;
 							request <= 1'b1;
 							execution_stage <= 3'b010;
 						end
@@ -146,21 +149,26 @@ module x3q16 (
 							uart_send <= 1'b1;
 							execution_stage <= 3'b100;
 						end
-						default: begin end
 					endcase
 				end
-				3'b010: begin
+				3'b010: begin // operation stage 2
 					case (opcode)
 						4'b0001: begin //ALU
 							if (reg_out != 3'b000) begin
 								registers[reg_out] <= alu_result;
 							end
+							registers[1][3] <= eF;
+							registers[1][2] <= gaF;
+							registers[1][4] <= alu_result == 16'h0000;
 							execution_stage <= 3'b100;
 						end
 						4'b0010: begin //ALUI
 							if (reg_out != 3'b000) begin
 								registers[reg_out] <= alu_result;
 							end
+							registers[1][3] <= eF;
+							registers[1][2] <= gaF;
+							registers[1][4] <= alu_result == 16'h0000;
 							execution_stage <= 3'b100;
 						end
 						4'b0100: begin //Jump
@@ -180,7 +188,7 @@ module x3q16 (
 							if (memory_ready) begin
 								if (settings[0]) begin
 									registers[reg_out] <= memory_in;
-									request_address <= current_address + 1'b1;
+									request_address <= alu_result;
 									execution_stage <= 3'b100;
 								end else begin
 									request_address <= memory_in;
@@ -192,7 +200,7 @@ module x3q16 (
 						4'b0110: begin //Store
 							if (settings[0]) begin
 								if (write_complete) begin
-									request_address <= current_address + 1'b1;
+									request_address <= alu_result;
 									execution_stage <= 3'b100;
 								end
 							end else begin
@@ -204,19 +212,18 @@ module x3q16 (
 								end
 							end
 						end
-						default: begin end
 					endcase
 				end
-				3'b011: begin
+				3'b011: begin // operation stage 3
 					if (opcode == 4'b0101) begin // load or store
 						if (memory_ready) begin
 							registers[reg_out] <= memory_in;
-							request_address <= current_address + 16'h0002;
+							request_address <= alu_result;
 							execution_stage <= 3'b100;
 						end
 					end else begin
 						if (write_complete) begin 
-							request_address <= current_address + 16'h0002;
+							request_address <= alu_result;
 							execution_stage <= 3'b100;
 						end
 					end
@@ -227,10 +234,11 @@ module x3q16 (
 					request <= 1'b1;
 					data_out <= 16'b0;
 					uart_send <= 1'b0;
+					alu_mode <= 3'b000;
 				end
-				default: begin
-					execution_stage <= 3'b000;
-					request <= 1'b0;
+				3'b101: begin // Setup stage 2
+					request_address <= alu_result;
+					execution_stage <= 3'b001;
 				end
 			endcase
 		end
