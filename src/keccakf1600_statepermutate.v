@@ -1,17 +1,17 @@
 module keccakf1600_statepermutate(
 	input clk,
 	input rstn,
-	input [63:0] din [24:0], 
-	output reg [63:0] dout [24:0]);
+	input [64*24-1:0] din, 
+	output reg [64*24-1:0] dout);
 
-	reg [63:0] state [24:0];
-	reg [63:0] next_state [24:0];
+	reg [64*24-1:0] state;
+	reg [64*24-1:0] next_state;
 	reg [4:0] state_round;
 	reg [4:0] next_state_round;
 	reg [63:0] const_1;
 	reg [63:0] const_2;
 
-localparam [63:0] round_constants[23:0] = {
+localparam [64*24-1:0] round_constants = {
     64'h0000000000000001,
     64'h0000000000008082,
     64'h800000000000808a,
@@ -40,33 +40,34 @@ localparam [63:0] round_constants[23:0] = {
 
 keccak_round k_round (.instate(state), .round_constant1(const_1), .round_constant2(const_2), .outstate(next_state));
 
-	always_ff @ (posedge clk) begin
+	always @ (posedge clk) begin
 		if (!rstn)
 		begin
-			state_round <=  next_state_round;
+			if(state_round == 0) begin
+				state <= din;
+			end else if(state_round == 5'd23) begin
+				dout <= state;
+			end
+			state_round <= next_state_round;
 			state <= next_state;
 		end
 	end
 
-	always_latch begin
-			const_1 = round_constants[state_round];
-			const_2 = round_constants[state_round+5'd1];
-			if (state_round == 5'd24) begin
+	always @* begin
+			const_1 = round_constants[state_round*64+:64];
+			const_2 = round_constants[(state_round+5'd1)*64+:64];
+	if (state_round == 5'd23) begin
 				next_state_round = 0;
-				state = din;
-			end else if (state_round == 5'd23) begin
-				dout = state;
-				next_state_round = state_round + 5'd2;
 			end else
 				next_state_round = state_round + 5'd2;
 	end
 endmodule
 
 module keccak_round(
-	input [63:0] instate [24:0],
+	input [64*24-1:0] instate,
 	input [63:0] round_constant1,
 	input [63:0] round_constant2,
-	output reg [63:0] outstate [24:0]);
+	output reg [64*24-1:0] outstate);
 
 function [63:0] ROL(input [63:0] a, integer offset);
 	begin
@@ -145,8 +146,10 @@ reg [63:0] e_state [24:0];
 `define ESO e_state[23]
 `define ESU e_state[24]
 
-always_comb begin
-	state = instate;
+always @* begin
+	for (int i=0; i<24; i++) begin
+    state[i] = instate[64*i +: 64];
+  end
 
 	// prepareTheta
 	`BCA = `ABU ^ `AGA ^ `AKA ^ `AMA ^ `ASA;
@@ -338,7 +341,9 @@ always_comb begin
 	`ASO = `BCO ^((~`BCU)& `BCA);
 	`ASU = `BCU ^((~`BCA)& `BCE);
 
-	outstate = state;
+	for (int i=0; i<24; i++) begin
+    outstate[64*i +: 64] = state[i];
+  end
 end
 
 endmodule
