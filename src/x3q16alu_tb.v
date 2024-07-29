@@ -17,7 +17,7 @@ module x3q16alu_tb;
 
 	//Testvectors
 	reg [31:0] vectornum, errors;
-	reg [7:0] testvectors[52:0];
+	reg [52:0] testvectors[100000:0];
 	
 	reg clk;
 	reg reset;
@@ -70,12 +70,12 @@ module x3q16alu_tb;
 			)
 			begin
 				$display("Error: Inputs: a = %b, b = %b, mode = %b", a, b, mode);
-				$display("	 Outputs: result = %b, ef = %b, gf = %b", result, equal_flag, greater_a_flag);
+				$display("       Outputs: result = %b, ef = %b, gf = %b", result, equal_flag, greater_a_flag);
 				errors = errors + 1;
 			end
 			
 			vectornum = vectornum + 1;
-			if (vectornum === 1) begin
+			if (testvectors[vectornum] === 53'bx) begin
 				$display("%d tests completed with %d errors", vectornum, errors);
 				$finish;
 			end
