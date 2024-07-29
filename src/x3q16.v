@@ -1,3 +1,4 @@
+`include "x3q16alu.v"
 module x3q16 (
 		input clk,
 		input reset,
