@@ -30,6 +30,6 @@ module x3q16alu (
 		endcase
 
 		equal_flag = sub == 16'h0000;
-		greater_a_flag = (~(sub == 16'h0000)) & ((b[15] & ~a[15]) | (a[15] & b[15] & ~sub[15]) | (~a[15] & ~b[15] & sub[15]));
+		greater_a_flag = (~(sub == 16'h0000)) & ((b[15] & ~a[15]) | (a[15] & b[15] & ~sub[15]) | (~a[15] & ~b[15] & ~sub[15]));
 	end
 endmodule
