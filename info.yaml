@@ -1,7 +1,7 @@
 # Tiny Tapeout project information
 project:
   title:        "Zoom Zoom"      # Project title
-  author:       "Justin Turcotte, Andrew Heitkamp, Simon Youn, Kellen Yu, Vallabh Arun, Nicole Christian"      # Your name
+  author:       "Justin T, Andrew H, Simon Y, Kellen Y, Vallabh A, Nicole C"      # Your name
   discord:      ""      # Your discord username, for communication and automatically assigning you a Tapeout role (optional)
   description:  "Custom Cpu with custome external memory bus and sha-3 and CORDIC accelerators"      # One line description of what your project does
   language:     "Verilog" # other examples include SystemVerilog, Amaranth, VHDL, etc
