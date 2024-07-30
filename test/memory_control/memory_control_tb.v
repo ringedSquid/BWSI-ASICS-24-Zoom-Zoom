@@ -13,7 +13,7 @@ module memory_control_tb;
 	wire write_complete;
 
 	reg [31:0] vectornum, errors;
-	reg [51:0] testvectors [100000:0];
+	reg [63:0] testvectors [100000:0];
 
 	reg [15:0] expected_memory_in;
 	reg expected_memory_ready;
@@ -31,10 +31,6 @@ module memory_control_tb;
 		.write_complete(write_complete)
 	);
 
-	always begin
-		clk = 1; #5;
-		clk = 0; #5;
-	end
 
 	initial begin
 		$readmemh("memory_control_tb.tv", testvectors, 0, 65536);
@@ -44,12 +40,22 @@ module memory_control_tb;
 		reset = 0;
 	end
 
+	always begin
+		clk = 1; #5;
+		clk = 0; #5;
+	end
+
 	always @(posedge clk) begin
-		#1;
-		{
-			request_address, request_type, request, data_out,
-			expected_memory_in, expected_memory_ready, expected_write_complete
-			} = testvectors[vectornum];
+		if (~reset) begin
+			#1;
+			request_address 	<= testvectors[vectornum][63:48];
+			request_type     	<= testvectors[vectornum][44];
+			request			<= testvectors[vectornum][40];
+			data_out		<= testvectors[vectornum][39:24];
+			expected_memory_in	<= testvectors[vectornum][23:8];
+			expected_memory_ready	<= testvectors[vectornum][4];
+			expected_write_complete	<= testvectors[vectornum][0];
+		end
 	end
 
 	always @(negedge clk) begin
@@ -60,9 +66,9 @@ module memory_control_tb;
 				(expected_write_complete !== write_complete)
 			)
 			begin
-				$display("ERROR:");
+				$display("ERROR:%d\tCASE:%d", errors, vectornum);
 				$display("\tInputs:");
-				$display("\t\tmemory_in:\t%h", memory_in);
+				$display("\t\trequest_addr:\t%h", request_address);
 				$display("\t\trequest_type:\t%h", request_type);
 				$display("\t\trequest:\t%h", request);
 				$display("\t\tdata_out:\t%h", data_out);
@@ -76,7 +82,7 @@ module memory_control_tb;
 			end
 
 			vectornum = vectornum + 1;
-			if (testvectors[vectornum] === 52'bx) begin
+			if (testvectors[vectornum] === 64'bx) begin
 				$display("COMPLETE:");
 				$display("\t%d tests completed with %d errors!", vectornum, errors);
 				$finish;
