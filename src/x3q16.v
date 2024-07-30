@@ -27,10 +27,10 @@ module x3q16 (
 	wire [2:0] reg1, reg2, reg_out;
 	wire [8:0] imm_upper;
 	wire [7:0] imm_lower;
-  wire [2:0] reg1_k;
-  wire [4:0] kreg1; 
-  wire [1:0] kreg1_extended; 
-  wire ksettings;
+	wire [2:0] reg1_k;
+	wire [4:0] kreg1; 
+	wire [1:0] kreg1_extended; 
+	wire ksettings;
 	
 	reg [2:0] alu_mode;
 	reg [15:0] alu_a, alu_b;
@@ -44,10 +44,9 @@ module x3q16 (
 	assign reg_out = current_instruction[15:13];
 	assign imm_lower = current_instruction[15:8];
 	assign imm_upper = current_instruction[15:7];
-  assign reg1_k = current_instruction[6:4];
-  assign kreg1 = current_instruction[11:7];
-  assign kreg1_extended = current_instruction[13:12];
-  assign ksettings = current_instruction[14];
+	assign kreg1 = current_instruction[11:7];
+	assign kreg1_extended = current_instruction[13:12];
+	assign ksettings = current_instruction[14];
 
 	localparam [64*24-1:0] round_constants = {
     64'h0000000000000001,
@@ -208,15 +207,15 @@ module x3q16 (
 							execution_stage <= 3'b100;
 						end
 						4'b1001: begin //Keccak load/unload
+							alu_a <= current_address;
+							alu_b <= 1'h1;
                             if (ksettings == 0) begin //load
-                                alu_a <= current_address;
-                                request_address <= registers[reg1_k];
+                                request_address <= registers[settings];
                                 request <= 1'b1;
                             end else begin // unload
 							    data_out <= keccak_state[kreg1*64+kreg1_extended*16+:16];
-                                request_address <= registers[reg1_k];
+                                request_address <= registers[settings];
                                 request_type <= 1'b1;
-                                alu_a <= 16'h1;
 							    request <= 1'b1;
                             end
 							execution_stage <= 3'b010;
@@ -290,7 +289,7 @@ module x3q16 (
 						end
 						4'b1001: begin //Keccak load/unload
                             if (ksettings == 0) begin //load
-                                if (memory_ready == 1) begin
+                                if (memory_ready) begin
 								    keccak_state[kreg1*64+kreg1_extended*16+:16] <= memory_in;
                                     request_address <= alu_result;
 								    execution_stage <= 3'b100;
@@ -301,7 +300,6 @@ module x3q16 (
                                     execution_stage <= 3'b100;
 								end
                             end
-							execution_stage <= 3'b010;
 						end
 					endcase
 				end
