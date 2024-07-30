@@ -1,4 +1,3 @@
-/*
 module memory_control (
     input wire clk,
     input wire reset,
