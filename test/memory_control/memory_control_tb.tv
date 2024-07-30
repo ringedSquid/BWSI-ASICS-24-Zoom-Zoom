@@ -1,0 +1,6 @@
+//req_addr, req_type, req, data_out, mem_in, mem_ready, write_complete
+0000_0_0_0000_0000_1_1 //reset state
+0000_1_1_abcd_0000_1_1 //write abcd to address 0000
+0000_0_0_0000_0000_1_1 //wait for write to complete
+0000_0_1_0000_0000_1_1 //read from address
+0000_0_0_0000_abcd_1_1 //get data

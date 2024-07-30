@@ -3,11 +3,11 @@ module ram_16bit (
     input wire clk,              
     input wire we,   // write enable
     input wire oe,   // read enable
-    input wire [17:0] addr, // bus (256k locations)
+    input wire [15:0] addr, // bus 
     inout wire [15:0] data  // io pin 
 );
 
-    reg [15:0] memory [0:262143];
+    reg [15:0] memory [15:0];
     reg [15:0] dout;
 
     wire data_enable = !we && oe; 
