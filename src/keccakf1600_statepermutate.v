@@ -66,10 +66,10 @@
 module keccak_round(
 	input [64*24-1:0] instate,
 	input [63:0] round_constant1,
-	input [63:0] round_constant2,
+	// input [63:0] round_constant2,
 	output reg [64*24-1:0] outstate);
 
-function [63:0] ROL(input [63:0] a, integer offset);
+function [63:0] ROL(input [63:0] a, input [63:0] offset);
 	begin
 		ROL = (a << offset)^(a >> (64 - offset));
 	end
@@ -146,17 +146,19 @@ reg [63:0] e_state [24:0];
 `define ESO e_state[23]
 `define ESU e_state[24]
 
+integer i;
+
 always @* begin
-	for (int i=0; i<24; i++) begin
+	for (i=0; i<24; i=i+1) begin
     state[i] = instate[64*i +: 64];
   end
 
 	// prepareTheta
-	`BCA = `ABU ^ `AGA ^ `AKA ^ `AMA ^ `ASA;
-	`BCE = `ABE ^ `AGA ^ `AKE ^ `AME ^ `ASE;
-	`BCI = `ABI ^ `AGA ^ `AKI ^ `AMI ^ `ASI;
-	`BCO = `ABO ^ `AGA ^ `AKO ^ `AMO ^ `ASO;
-	`BCU = `ABU ^ `AGA ^ `AKU ^ `AMU ^ `ASU;
+	`BCA = `ABA ^ `AGA ^ `AKA ^ `AMA ^ `ASA;
+	`BCE = `ABE ^ `AGE ^ `AKE ^ `AME ^ `ASE;
+	`BCI = `ABI ^ `AGI ^ `AKI ^ `AMI ^ `ASI;
+	`BCO = `ABO ^ `AGO ^ `AKO ^ `AMO ^ `ASO;
+	`BCU = `ABU ^ `AGU ^ `AKU ^ `AMU ^ `ASU;
 
 	//thetaRhoPiChiIotaPrepareTheta(round, A, E)
 	`DA = `BCU ^ ROL(`BCE, 1);
@@ -165,32 +167,32 @@ always @* begin
 	`DO = `BCI ^ ROL(`BCU, 1);
 	`DU = `BCO ^ ROL(`BCA, 1);
 
-	`ABA ^= `DA;
+	`ABA = `ABA ^ `DA;
 	`BCA = `ABA;
-	`AGE ^= `DE;
+	`AGE = `AGE ^ `DE;
 	`BCE = ROL(`AGE, 44);
-	`AKI ^= `DI;
+	`AKI = `AKI ^ `DI;
 	`BCI = ROL(`AKI, 43);
-	`AMO ^= `DO;
+	`AMO = `AMO ^ `DO;
 	`BCO = ROL(`AMO, 21);
-	`ASU ^= `DU;
+	`ASU = `ASU ^ `DU;
 	`BCU = ROL(`ASU, 14);
 	`EBA = `BCA ^ ((~`BCE)& `BCI);
-	`EBA ^= round_constant1;
+	`EBA = `EBA ^ round_constant1;
 	`EBE = `BCE ^((~`BCI)& `BCO);
 	`EBI = `BCI ^((~`BCO)& `BCU);
 	`EBO = `BCO ^((~`BCU)& `BCA);
 	`EBU = `BCU ^((~`BCA)& `BCE);
 
-	`ABO ^= `DO;
+	`ABO = `ABO ^ `DO;
 	`BCA = ROL(`ABO, 28);
-	`AGU ^= `DU;
+	`AGU = `AGU ^ `DU;
 	`BCE = ROL(`AGU, 20);
-	`AKA ^= `DA;
+	`AKA = `AKA ^ `DA;
 	`BCI = ROL(`AKA, 3);
-	`AME ^= `DE;
+	`AME = `AME ^ `DE;
 	`BCO = ROL(`AME, 45);
-	`ASI ^= `DI;
+	`ASI = `ASI ^ `DI;
 	`BCU = ROL(`ASI, 61);
 	`EGA = `BCA ^((~`BCE)& `BCI);
 	`EGE = `BCE ^((~`BCI)& `BCO);
@@ -198,15 +200,15 @@ always @* begin
 	`EGO = `BCO ^((~`BCU)& `BCA);
 	`EGU = `BCU ^((~`BCA)& `BCE);
 
-	`ABE ^= `DE;
+	`ABE = `ABE ^ `DE;
 	`BCA = ROL(`ABE, 1);
-	`AGI ^= `DI;
+	`AGI = `AGI ^ `DI;
 	`BCE = ROL(`AGI, 6);
-	`AKO ^= `DO;
+	`AKO = `AKO ^ `DO;
 	`BCI = ROL(`AKO, 25);
-	`AMU ^= `DU;
+	`AMU = `AMU ^ `DU;
 	`BCO = ROL(`AMU, 8);
-	`ASA ^= `DA;
+	`ASA = `ASA ^ `DA;
 	`BCU = ROL(`ASA, 18);
 	`EKA = `BCA ^((~`BCE)& `BCI);
 	`EKE = `BCE ^((~`BCI)& `BCO);
@@ -214,15 +216,15 @@ always @* begin
 	`EKO = `BCO ^((~`BCU)& `BCA);
 	`EKU = `BCU ^((~`BCA)& `BCE);
 
-	`ABU ^= `DU;
+	`ABU = `ABU ^ `DU;
 	`BCA = ROL(`ABU, 27);
-	`AGA ^= `DA;
+	`AGA = `AGA ^ `DA;
 	`BCE = ROL(`AGA, 36);
-	`AKE ^= `DE;
+	`AKE = `AKE ^ `DE;
 	`BCI = ROL(`AKE, 10);
-	`AMI ^= `DI;
+	`AMI = `AMI ^ `DI;
 	`BCO = ROL(`AMI, 15);
-	`ASO ^= `DO;
+	`ASO = `ASO ^ `DO;
 	`BCU = ROL(`ASO, 56);
 	`EMA = `BCA ^((~`BCE)& `BCI);
 	`EME = `BCE ^((~`BCI)& `BCO);
@@ -230,15 +232,15 @@ always @* begin
 	`EMO = `BCO ^((~`BCU)& `BCA);
 	`EMU = `BCU ^((~`BCA)& `BCE);
 
-	`ABI ^= `DI;
+	`ABI = `ABI ^ `DI;
 	`BCA = ROL(`ABI, 62);
-	`AGO ^= `DO;
+	`AGO = `AGO ^ `DO;
 	`BCE = ROL(`AGO, 55);
-	`AKU ^= `DU;
+	`AKU = `AKU ^ `DU;
 	`BCI = ROL(`AKU, 39);
-	`AMA ^= `DA;
+	`AMA = `AMA ^ `DA;
 	`BCO = ROL(`AMA, 41);
-	`ASE ^= `DE;
+	`ASE = `ASE ^ `DE;
 	`BCU = ROL(`ASE, 2);
 	`ESA = `BCA ^((~`BCE)& `BCI);
 	`ESE = `BCE ^((~`BCI)& `BCO);
@@ -246,103 +248,105 @@ always @* begin
 	`ESO = `BCO ^((~`BCU)& `BCA);
 	`ESU = `BCU ^((~`BCA)& `BCE);
 
-	// prepareTheta
-	`BCA = `EBA ^ `EGA ^ `EKA ^ `EMA ^ `ESA;
-	`BCE = `EBE ^ `EGE ^ `EKE ^ `EME ^ `ESE;
-	`BCI = `EBI ^ `EGI ^ `EKI ^ `EMI ^ `ESI;
-	`BCO = `EBO ^ `EGO ^ `EKO ^ `EMO ^ `ESO;
-	`BCU = `EBU ^ `EGU ^ `EKU ^ `EMU ^ `ESU;
+	// // -----------------------------------------------------------------------------------------
 
-	// thetaRhoPiChiIotaPerpareTheta(round +1, E, A)
-	`DA = `BCU ^ ROL(`BCE, 1);
-	`DE = `BCA ^ ROL(`BCI, 1);
-	`DI = `BCE ^ ROL(`BCO, 1);
-	`DO = `BCI ^ ROL(`BCU, 1);
-	`DU = `BCO ^ ROL(`BCA, 1);
+	// // prepareTheta
+	// `BCA = `EBA ^ `EGA ^ `EKA ^ `EMA ^ `ESA;
+	// `BCE = `EBE ^ `EGE ^ `EKE ^ `EME ^ `ESE;
+	// `BCI = `EBI ^ `EGI ^ `EKI ^ `EMI ^ `ESI;
+	// `BCO = `EBO ^ `EGO ^ `EKO ^ `EMO ^ `ESO;
+	// `BCU = `EBU ^ `EGU ^ `EKU ^ `EMU ^ `ESU;
 
-	`EBA ^= `DA;
-	`BCA = `EBA;
-	`EGE ^= `DE;
-	`BCE = ROL(`EGE, 44);
-	`EKI ^= `DI;
-	`BCI = ROL(`EKI, 43);
-	`EMO ^= `DO;
-	`BCO = ROL(`EMO, 21);
-	`ESU ^= `DU;
-	`BCU = ROL(`ESU, 14);
-	`ABA = `BCA ^((~`BCE)& `BCI);
-	`ABA ^= round_constant2;
-	`ABE = `BCE ^((~`BCI)& `BCO);
-	`ABI = `BCI ^((~`BCO)& `BCU);
-	`ABO = `BCO ^((~`BCU)& `BCA);
-	`ABU = `BCU ^((~`BCA)& `BCE);
+	// // thetaRhoPiChiIotaPerpareTheta(round +1, E, A)
+	// `DA = `BCU ^ ROL(`BCE, 1);
+	// `DE = `BCA ^ ROL(`BCI, 1);
+	// `DI = `BCE ^ ROL(`BCO, 1);
+	// `DO = `BCI ^ ROL(`BCU, 1);
+	// `DU = `BCO ^ ROL(`BCA, 1);
 
-	`EBO ^= `DO;
-	`BCA = ROL(`EBO, 28);
-	`EGU ^= `DU;
-	`BCE = ROL(`EGU, 20);
-	`EKA ^= `DA;
-	`BCI = ROL(`EKA, 3);
-	`EME ^= `DE;
-	`BCO = ROL(`EME, 45);
-	`ESI ^= `DI;
-	`BCU = ROL(`ESI, 61);
-	`AGA = `BCA ^((~`BCE)& `BCI);
-	`AGE = `BCE ^((~`BCI)& `BCO);
-	`AGI = `BCI ^((~`BCO)& `BCU);
-	`AGO = `BCU ^((~`BCU)& `BCA);
-	`AGU = `BCU ^((~`BCA)& `BCE);
+	// `EBA = `EBA ^ `DA;
+	// `BCA = `EBA;
+	// `EGE = `EGE ^ `DE;
+	// `BCE = ROL(`EGE, 44);
+	// `EKI = `EKI ^ `DI;
+	// `BCI = ROL(`EKI, 43);
+	// `EMO = `EMO ^ `DO;
+	// `BCO = ROL(`EMO, 21);
+	// `ESU = `ESU ^ `DU;
+	// `BCU = ROL(`ESU, 14);
+	// `ABA = `BCA ^((~`BCE)& `BCI);
+	// `ABA = `ABA ^ round_constant2;
+	// `ABE = `BCE ^((~`BCI)& `BCO);
+	// `ABI = `BCI ^((~`BCO)& `BCU);
+	// `ABO = `BCO ^((~`BCU)& `BCA);
+	// `ABU = `BCU ^((~`BCA)& `BCE);
 
-	`EBE ^= `DE;
-	`BCA = ROL(`EBE, 1);
-	`EGI ^= `DI;
-	`BCE = ROL(`EGI, 6);
-	`EKO ^= `DO;
-	`BCI = ROL(`EKO, 25);
-	`EMU ^= `DU;
-	`BCO = ROL(`EMU, 0);
-	`ESA ^= `DA;
-	`BCU = ROL(`ESA, 10);
-	`AKA = `BCA ^((~`BCE)& `BCI);
-	`AKE = `BCE ^((~`BCI)& `BCO);
-	`AKI = `BCI ^((~`BCO)& `BCU);
-	`AKO = `BCO ^((~`BCU)& `BCA);
-	`AKU = `BCU ^((~`BCA)& `BCE);
+	// `EBO = `EBO ^ `DO;
+	// `BCA = ROL(`EBO, 28);
+	// `EGU = `EGU ^ `DU;
+	// `BCE = ROL(`EGU, 20);
+	// `EKA = `EKA ^ `DA;
+	// `BCI = ROL(`EKA, 3);
+	// `EME = `EME ^ `DE;
+	// `BCO = ROL(`EME, 45);
+	// `ESI = `ESI ^ `DI;
+	// `BCU = ROL(`ESI, 61);
+	// `AGA = `BCA ^((~`BCE)& `BCI);
+	// `AGE = `BCE ^((~`BCI)& `BCO);
+	// `AGI = `BCI ^((~`BCO)& `BCU);
+	// `AGO = `BCU ^((~`BCU)& `BCA);
+	// `AGU = `BCU ^((~`BCA)& `BCE);
 
-	`EBU ^= `DU;
-	`BCA = ROL(`EBU, 27);
-	`EGA ^= `DA;
-	`BCE = ROL(`EGA, 36);
-	`EKE ^= `DE;
-	`BCI = ROL(`EKE, 10);
-	`EMI ^= `DI;
-	`BCO = ROL(`EMI, 15);
-	`ESO ^= `DO;
-	`BCU = ROL(`ESO, 56);
-	`AMA = `BCA ^((~`BCE)& `BCI);
-	`AME = `BCE ^((~`BCI)& `BCO);
-	`AMI = `BCI ^((~`BCO)& `BCU);
-	`AMO = `BCO ^((~`BCU)& `BCA);
-	`AMU = `BCU ^((~`BCA)& `BCE);
+	// `EBE = `EBE ^ `DE;
+	// `BCA = ROL(`EBE, 1);
+	// `EGI = `EGI ^ `DI;
+	// `BCE = ROL(`EGI, 6);
+	// `EKO = `EKO ^ `DO;
+	// `BCI = ROL(`EKO, 25);
+	// `EMU = `EMU ^ `DU;
+	// `BCO = ROL(`EMU, 0);
+	// `ESA = `ESA ^ `DA;
+	// `BCU = ROL(`ESA, 10);
+	// `AKA = `BCA ^((~`BCE)& `BCI);
+	// `AKE = `BCE ^((~`BCI)& `BCO);
+	// `AKI = `BCI ^((~`BCO)& `BCU);
+	// `AKO = `BCO ^((~`BCU)& `BCA);
+	// `AKU = `BCU ^((~`BCA)& `BCE);
 
-	`EBI ^= `DI;
-	`BCA = ROL(`EBI, 62);
-	`EGO ^= `DO;
-	`BCE = ROL(`EGO, 55);
-	`EKU ^= `DU;
-	`BCI = ROL(`EKU, 39);
-	`EMA ^= `DA;
-	`BCO = ROL(`EMA, 41);
-	`ESE ^= `DE;
-	`BCU = ROL(`ESE, 2);
-	`ASA = `BCA ^((~`BCE)& `BCI);
-	`ASE = `BCE ^((~`BCI)& `BCO);
-	`ASI = `BCI ^((~`BCO)& `BCU);
-	`ASO = `BCO ^((~`BCU)& `BCA);
-	`ASU = `BCU ^((~`BCA)& `BCE);
+	// `EBU = `EBU ^ `DU;
+	// `BCA = ROL(`EBU, 27);
+	// `EGA = `EGA ^ `DA;
+	// `BCE = ROL(`EGA, 36);
+	// `EKE = `EKE ^ `DE;
+	// `BCI = ROL(`EKE, 10);
+	// `EMI = `EMI ^ `DI;
+	// `BCO = ROL(`EMI, 15);
+	// `ESO = `ESO ^ `DO;
+	// `BCU = ROL(`ESO, 56);
+	// `AMA = `BCA ^((~`BCE)& `BCI);
+	// `AME = `BCE ^((~`BCI)& `BCO);
+	// `AMI = `BCI ^((~`BCO)& `BCU);
+	// `AMO = `BCO ^((~`BCU)& `BCA);
+	// `AMU = `BCU ^((~`BCA)& `BCE);
 
-	for (int i=0; i<24; i++) begin
-    outstate[64*i +: 64] = state[i];
+	// `EBI = `EBI ^ `DI;
+	// `BCA = ROL(`EBI, 62);
+	// `EGO = `EGO ^ `DO;
+	// `BCE = ROL(`EGO, 55);
+	// `EKU = `EKU ^ `DU;
+	// `BCI = ROL(`EKU, 39);
+	// `EMA = `EMA ^ `DA;
+	// `BCO = ROL(`EMA, 41);
+	// `ESE = `ESE ^ `DE;
+	// `BCU = ROL(`ESE, 2);
+	// `ASA = `BCA ^((~`BCE)& `BCI);
+	// `ASE = `BCE ^((~`BCI)& `BCO);
+	// `ASI = `BCI ^((~`BCO)& `BCU);
+	// `ASO = `BCO ^((~`BCU)& `BCA);
+	// `ASU = `BCU ^((~`BCA)& `BCE);
+
+	for (i=0; i<24; i=i+1) begin
+    outstate[64*i +: 64] = e_state[i];
   end
 end
 
