@@ -118,38 +118,36 @@ reg [63:0] d_state [4:0];
 `define DO d_state[3]
 `define DU d_state[4]
 
-reg [63:0] e_state [24:0];
-
-`define EBA e_state[0]
-`define EBE e_state[1]
-`define EBI e_state[2]
-`define EBO e_state[3]
-`define EBU e_state[4]
-`define EGA e_state[5]
-`define EGE e_state[6]
-`define EGI e_state[7]
-`define EGO e_state[8]
-`define EGU e_state[9]
-`define EKA e_state[10]
-`define EKE e_state[11]
-`define EKI e_state[12]
-`define EKO e_state[13]
-`define EKU e_state[14]
-`define EMA e_state[15]
-`define EME e_state[16]
-`define EMI e_state[17]
-`define EMO e_state[18]
-`define EMU e_state[19]
-`define ESA e_state[20]
-`define ESE e_state[21]
-`define ESI e_state[22]
-`define ESO e_state[23]
-`define ESU e_state[24]
+`define EBA outstate[0*64+:64]
+`define EBE outstate[1*64+:64]
+`define EBI outstate[2*64+:64]
+`define EBO outstate[3*64+:64]
+`define EBU outstate[4*64+:64]
+`define EGA outstate[5*64+:64]
+`define EGE outstate[6*64+:64]
+`define EGI outstate[7*64+:64]
+`define EGO outstate[8*64+:64]
+`define EGU outstate[9*64+:64]
+`define EKA outstate[10*64+:64]
+`define EKE outstate[11*64+:64]
+`define EKI outstate[12*64+:64]
+`define EKO outstate[13*64+:64]
+`define EKU outstate[14*64+:64]
+`define EMA outstate[15*64+:64]
+`define EME outstate[16*64+:64]
+`define EMI outstate[17*64+:64]
+`define EMO outstate[18*64+:64]
+`define EMU outstate[19*64+:64]
+`define ESA outstate[20*64+:64]
+`define ESE outstate[21*64+:64]
+`define ESI outstate[22*64+:64]
+`define ESO outstate[23*64+:64]
+`define ESU outstate[24*64+:64]
 
 integer i;
 
 always @* begin
-	for (i=0; i<24; i=i+1) begin
+	for (i=0; i<=24; i=i+1) begin
     state[i] = instate[64*i +: 64];
   end
 
@@ -175,7 +173,7 @@ always @* begin
 	`BCI = ROL(`AKI, 43);
 	`AMO = `AMO ^ `DO;
 	`BCO = ROL(`AMO, 21);
-	`ASU = `ASU ^ `DU;
+	`ASU = `DU ^ `ASU;
 	`BCU = ROL(`ASU, 14);
 	`EBA = `BCA ^ ((~`BCE)& `BCI);
 	`EBA = `EBA ^ round_constant1;
@@ -344,10 +342,6 @@ always @* begin
 	// `ASI = `BCI ^((~`BCO)& `BCU);
 	// `ASO = `BCO ^((~`BCU)& `BCA);
 	// `ASU = `BCU ^((~`BCA)& `BCE);
-
-	for (i=0; i<24; i=i+1) begin
-    outstate[64*i +: 64] = e_state[i];
-  end
 end
 
 endmodule
