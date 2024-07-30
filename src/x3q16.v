@@ -27,7 +27,6 @@ module x3q16 (
 	wire [2:0] reg1, reg2, reg_out;
 	wire [8:0] imm_upper;
 	wire [7:0] imm_lower;
-	wire [2:0] reg1_k;
 	wire [4:0] kreg1; 
 	wire [1:0] kreg1_extended; 
 	wire ksettings;
@@ -211,7 +210,7 @@ module x3q16 (
 							alu_b <= 1'h1;
                             if (ksettings == 0) begin //load
                                 request_address <= registers[settings];
-                                request <= 1'b1;
+                                request <= 16'b1;
                             end else begin // unload
 							    data_out <= keccak_state[kreg1*64+kreg1_extended*16+:16];
                                 request_address <= registers[settings];
