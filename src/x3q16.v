@@ -1,4 +1,5 @@
-`include "x3q16alu.v"
+// `include "x3q16alu.v"
+// `include "keccakf1600_statepermutate.v"
 module x3q16 (
 		input clk,
 		input reset,
@@ -26,6 +27,10 @@ module x3q16 (
 	wire [2:0] reg1, reg2, reg_out;
 	wire [8:0] imm_upper;
 	wire [7:0] imm_lower;
+  wire [2:0] reg1_k;
+  wire [4:0] kreg1; 
+  wire [1:0] kreg1_extended; 
+  wire ksettings;
 	
 	reg [2:0] alu_mode;
 	reg [15:0] alu_a, alu_b;
@@ -39,6 +44,49 @@ module x3q16 (
 	assign reg_out = current_instruction[15:13];
 	assign imm_lower = current_instruction[15:8];
 	assign imm_upper = current_instruction[15:7];
+  assign reg1_k = current_instruction[6:4];
+  assign kreg1 = current_instruction[11:7];
+  assign kreg1_extended = current_instruction[13:12];
+  assign ksettings = current_instruction[14];
+
+	localparam [64*24-1:0] round_constants = {
+    64'h0000000000000001,
+    64'h0000000000008082,
+    64'h800000000000808a,
+    64'h8000000080008000,
+    64'h000000000000808b,
+    64'h0000000080000001,
+    64'h8000000080008081,
+    64'h8000000000008009,
+    64'h000000000000008a,
+    64'h0000000000000088,
+    64'h0000000080008009,
+    64'h000000008000000a,
+    64'h000000008000808b,
+    64'h800000000000008b,
+    64'h8000000000008089,
+    64'h8000000000008003,
+    64'h8000000000008002,
+    64'h8000000000000080,
+    64'h000000000000800a,
+    64'h800000008000000a,
+    64'h8000000080008081,
+    64'h8000000000008080,
+    64'h0000000080000001,
+    64'h8000000080008008
+	};
+
+	reg [64*24-1:0] keccak_state;
+	reg [64*24-1:0] next_keccak_state;
+	reg [63:0] const_1;
+	reg [63:0] const_2;
+
+	keccak_round k_round (
+		.instate(keccak_state), 
+		.round_constant1(const_1), 
+		.round_constant2(const_2), 
+		.outstate(next_keccak_state)
+	);
 
 	x3q16alu ALU (
 		.a(alu_a),
@@ -71,6 +119,9 @@ module x3q16 (
 			alu_b <= 16'b0;
 			alu_mode <= 3'b0;
 			jump_con <= 1'b0;
+			keccak_state <= 1536'b0;
+			const_1 <= 64'b0;
+			const_2 <= 64'b0;
 		end else begin
 			if (uart_inbound) begin
 				registers[1][0] <= 1'b1;
@@ -108,6 +159,12 @@ module x3q16 (
 							alu_b <= {8'h00, imm_lower};
 							execution_stage <= 3'b010;
 						end
+						4'b0011: begin //Keccak Round
+                            // load constants
+							const_1 <= round_constants[kreg1*64+:64];
+							const_2 <= round_constants[kreg1*64+7'd64+:64];
+							execution_stage <= 3'b010;
+						end
 						4'b0100: begin //Jump
 							if (reg_out != 3'b000) registers[reg_out] <= current_address;
 							if (settings == 3'b110) request <= 1'b1; else case (settings) 
@@ -124,7 +181,7 @@ module x3q16 (
 						end
 						4'b0101: begin //Load
 							alu_a <= current_address;
-							if (settings[0]) begin
+							if (settings[0] == 1) begin
 								request_address <= registers[reg1];
 								alu_b <= 16'h1;
 							end else alu_b <= 16'h2;
@@ -133,7 +190,7 @@ module x3q16 (
 						end
 						4'b0110: begin //Store
 							data_out <= registers[reg2];
-							if (settings[0]) begin
+							if (settings[0] == 1) begin
 								request_address <= registers[reg1];
 								request_type <= 1'b1;
 								alu_a <= 16'h1;
@@ -149,6 +206,20 @@ module x3q16 (
 							data_out <= registers[reg1];
 							uart_send <= 1'b1;
 							execution_stage <= 3'b100;
+						end
+						4'b1001: begin //Keccak load/unload
+                            if (ksettings == 0) begin //load
+                                alu_a <= current_address;
+                                request_address <= registers[reg1_k];
+                                request <= 1'b1;
+                            end else begin // unload
+							    data_out <= keccak_state[kreg1*64+kreg1_extended*16+:16];
+                                request_address <= registers[reg1_k];
+                                request_type <= 1'b1;
+                                alu_a <= 16'h1;
+							    request <= 1'b1;
+                            end
+							execution_stage <= 3'b010;
 						end
 					endcase
 				end
@@ -172,6 +243,10 @@ module x3q16 (
 							registers[1][4] <= alu_result == 16'h0000;
 							execution_stage <= 3'b100;
 						end
+						4'b0011: begin //Keccak Round
+							keccak_state <= next_keccak_state; // assign keccak state after calc
+							execution_stage <= 3'b100;
+						end
 						4'b0100: begin //Jump
 							if (settings == 3'b110) begin
 								if (memory_ready) begin
@@ -186,8 +261,8 @@ module x3q16 (
 							end 
 						end
 						4'b0101: begin //Load
-							if (memory_ready) begin
-								if (settings[0]) begin
+							if (memory_ready == 1) begin
+								if (settings[0] == 1) begin
 									registers[reg_out] <= memory_in;
 									request_address <= alu_result;
 									execution_stage <= 3'b100;
@@ -199,7 +274,7 @@ module x3q16 (
 							end
 						end
 						4'b0110: begin //Store
-							if (settings[0]) begin
+							if (settings[0] == 1) begin
 								if (write_complete) begin
 									request_address <= alu_result;
 									execution_stage <= 3'b100;
@@ -213,6 +288,21 @@ module x3q16 (
 								end
 							end
 						end
+						4'b1001: begin //Keccak load/unload
+                            if (ksettings == 0) begin //load
+                                if (memory_ready == 1) begin
+								    keccak_state[kreg1*64+kreg1_extended*16+:16] <= memory_in;
+                                    request_address <= alu_result;
+								    execution_stage <= 3'b100;
+                                end
+                            end else begin // unload/store
+								if (write_complete) begin
+									request_address <= alu_result;
+                                    execution_stage <= 3'b100;
+								end
+                            end
+							execution_stage <= 3'b010;
+						end
 					endcase
 				end
 				3'b011: begin // operation stage 3
@@ -222,7 +312,7 @@ module x3q16 (
 							request_address <= alu_result;
 							execution_stage <= 3'b100;
 						end
-					end else begin
+                    end else begin
 						if (write_complete) begin 
 							request_address <= alu_result;
 							execution_stage <= 3'b100;
