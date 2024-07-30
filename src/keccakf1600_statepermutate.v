@@ -1,67 +1,67 @@
-module keccakf1600_statepermutate(
-	input clk,
-	input rstn,
-	input [64*24-1:0] din, 
-	output reg [64*24-1:0] dout);
+// module keccakf1600_statepermutate(
+// 	input clk,
+// 	input rstn,
+// 	input [64*24-1:0] din, 
+// 	output reg [64*24-1:0] dout);
 
-	reg [64*24-1:0] state;
-	reg [64*24-1:0] next_state;
-	reg [4:0] state_round;
-	reg [4:0] next_state_round;
-	reg [63:0] const_1;
-	reg [63:0] const_2;
+// 	reg [64*24-1:0] state;
+// 	reg [64*24-1:0] next_state;
+// 	reg [4:0] state_round;
+// 	reg [4:0] next_state_round;
+// 	reg [63:0] const_1;
+// 	reg [63:0] const_2;
 
-localparam [64*24-1:0] round_constants = {
-    64'h0000000000000001,
-    64'h0000000000008082,
-    64'h800000000000808a,
-    64'h8000000080008000,
-    64'h000000000000808b,
-    64'h0000000080000001,
-    64'h8000000080008081,
-    64'h8000000000008009,
-    64'h000000000000008a,
-    64'h0000000000000088,
-    64'h0000000080008009,
-    64'h000000008000000a,
-    64'h000000008000808b,
-    64'h800000000000008b,
-    64'h8000000000008089,
-    64'h8000000000008003,
-    64'h8000000000008002,
-    64'h8000000000000080,
-    64'h000000000000800a,
-    64'h800000008000000a,
-    64'h8000000080008081,
-    64'h8000000000008080,
-    64'h0000000080000001,
-    64'h8000000080008008
-};
+// localparam [64*24-1:0] round_constants = {
+//     64'h0000000000000001,
+//     64'h0000000000008082,
+//     64'h800000000000808a,
+//     64'h8000000080008000,
+//     64'h000000000000808b,
+//     64'h0000000080000001,
+//     64'h8000000080008081,
+//     64'h8000000000008009,
+//     64'h000000000000008a,
+//     64'h0000000000000088,
+//     64'h0000000080008009,
+//     64'h000000008000000a,
+//     64'h000000008000808b,
+//     64'h800000000000008b,
+//     64'h8000000000008089,
+//     64'h8000000000008003,
+//     64'h8000000000008002,
+//     64'h8000000000000080,
+//     64'h000000000000800a,
+//     64'h800000008000000a,
+//     64'h8000000080008081,
+//     64'h8000000000008080,
+//     64'h0000000080000001,
+//     64'h8000000080008008
+// };
 
-keccak_round k_round (.instate(state), .round_constant1(const_1), .round_constant2(const_2), .outstate(next_state));
+// keccak_round k_round (.instate(state), .round_constant1(const_1), .round_constant2(const_2), .outstate(next_state));
 
-	always @ (posedge clk) begin
-		if (!rstn)
-		begin
-			if(state_round == 0) begin
-				state <= din;
-			end else if(state_round == 5'd23) begin
-				dout <= state;
-			end
-			state_round <= next_state_round;
-			state <= next_state;
-		end
-	end
+// 	always @ (posedge clk) begin
+// 		if (!rstn)
+// 		begin
+// 			if(state_round == 0) begin
+// 				state <= din;
+// 			end else if(state_round == 5'd23) begin
+// 				dout <= state;
+// 			end
+// 			state_round <= next_state_round;
+// 			state <= next_state;
+// 		end
+// 	end
 
-	always @* begin
-			const_1 = round_constants[state_round*64+:64];
-			const_2 = round_constants[(state_round+5'd1)*64+:64];
-	if (state_round == 5'd23) begin
-				next_state_round = 0;
-			end else
-				next_state_round = state_round + 5'd2;
-	end
-endmodule
+// 	always @* begin
+// 			const_1 = round_constants[state_round*64+:64];
+// 			const_2 = round_constants[(state_round+5'd1)*64+:64];
+// 	if (state_round == 5'd23) begin
+// 				next_state_round = 0;
+// 			end else
+// 				next_state_round = state_round + 5'd2;
+// 	end
+// endmodule
 
 module keccak_round(
 	input [64*24-1:0] instate,
