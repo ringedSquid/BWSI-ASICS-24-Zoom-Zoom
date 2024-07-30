@@ -14,7 +14,7 @@ module x3q16 (
 		output reg request,
 		output reg [15:0] data_out,
 
-		output reg tx
+		output wire tx
 	);
 	reg [15:0] current_address; //!!!CURRENT INSTRUCTION ADDRESS!!!
 	reg [15:0] current_instruction; 
@@ -58,7 +58,7 @@ module x3q16 (
 		.data(uart_data),
 		.send(uart_send),
 		.set(uart_set),
-		.tx(tx),
+		.tx_reg(tx),
 		.busy(uart_busy)
 	);
 
