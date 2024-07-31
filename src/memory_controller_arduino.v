@@ -1,4 +1,3 @@
-/*
 module memory_control (
     input wire clk,
     input wire reset,
@@ -30,9 +29,7 @@ module memory_control (
             upper_byte_pin <= 1'b0;
             control_signal_pins <= 2'b00;
             request_pin <= 1'b0;
-        end 
-        
-        else begin
+        end else begin
             if (request) begin
                 current_address <= request_address;
                 request_pin <= 1'b1;
@@ -48,9 +45,7 @@ module memory_control (
                     control_signal_pins <= 2'b00;
                     upper_byte_pin <= 1'b0;
                     request_pin <= 1'b0;
-                end 
-                
-                else begin
+                end else begin
                     control_signal_pins <= 2'b10;
                     lower_byte_pin <= 1'b1;
                     upper_byte_pin <= 1'b0;
@@ -64,9 +59,7 @@ module memory_control (
                     upper_byte_pin <= 1'b0;
                     request_pin <= 1'b0;
                 end
-            end 
-            
-            else begin
+            end else begin
                 memory_ready <= 1'b0;
                 write_complete <= 1'b0;
                 request_pin <= 1'b0;
@@ -78,18 +71,12 @@ module memory_control (
         if (control_signal_pins == 2'b01) begin
             if (upper_byte_pin) begin
                 data_pins = data_out_latched;
-            end 
-            
-            else if (lower_byte_pin) begin
+            end else if (lower_byte_pin) begin
                 data_pins = data_out_latched;
-            end 
-            
-            else begin
+            end else begin
                 data_pins = 8'bz;
             end
-        end 
-        
-        else begin
+        end else begin
             data_pins = 8'bz;
         end
     end
@@ -140,9 +127,7 @@ module memory_control (
             control_signal_pins <= 2'b00;
             request_pin <= 1'b0;
             state <= IDLE;
-        end 
-        
-        else begin
+        end else begin
             case (state)
                 IDLE: begin
                     memory_ready <= 1'b0;
@@ -156,9 +141,7 @@ module memory_control (
                             upper_byte_pin <= 1'b0;
                             data_out_latched <= data_out[7:0];
                             state <= WRITE_LOWER;
-                        end 
-                        
-                        else begin // read request
+                        end else begin // read request
                             control_signal_pins <= 2'b10;
                             lower_byte_pin <= 1'b1;
                             upper_byte_pin <= 1'b0;

@@ -114,7 +114,7 @@ void writeDataBus(uint8_t data) {
     pinMode(dataPins[i], OUTPUT);
     digitalWrite(dataPins[i], (data >> i) & 0x01);
   }
-  //checker
+  //set pins to input
   for (int i = 0; i < 8; i++) {
     pinMode(dataPins[i], INPUT_PULLUP);
   }
