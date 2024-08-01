@@ -1,3 +1,4 @@
+#once
 #subruledef register
 {
 	r0 => 0x0
@@ -8,7 +9,6 @@
 	r5 => 0x5
 	r6 => 0x6
 	r7 => 0x7
-
 }
 
 
@@ -23,7 +23,7 @@
 	nand    {r1: register}, {r2: register}, {ro: register}    => ro`3 @ r2`3 @ r1`3 @ 0x3`3 @ 0x1`4
 
 	addi    {ro: register}, {value: u8}                       => value`8 @ ro`3 @ 0x0`1 @ 0x2`4
-	multi   {ro: register}, {value: u8}                       => value`8 @ ro`3 @ 0x0`1 @ 0x2`4
+	multi   {ro: register}, {value: u8}                       => value`8 @ ro`3 @ 0x1`1 @ 0x2`4
 
 	shl     {r1: register}, {ro: register}                    => ro`3 @ 0x0`3 @ r1`3 @ 0x4`3 @ 0x1`4
 	shr     {r1: register}, {ro: register}                    => ro`3 @ 0x0`3 @ r1`3 @ 0x5`3 @ 0x1`4
@@ -39,10 +39,12 @@
 
 	ld      {value: u16}, {ro: register}                      => ro`3 @ 0x0`6 @ 0x0`3 @ 0x5`4 @ value`16
 	ldr     {r1: register}, {ro: register}                    => ro`3 @ 0x0`3 @ r1`3 @ 0x1`3 @ 0x5`4
-	str     {r2: register}, {value: u16}                      => 0x0`3 @ r1`3 @ 0x0`3 @ 0x0`3 @ 0x6`4 @ value`16
+	str     {r1: register}, {value: u16}                      => 0x0`3 @ r1`3 @ 0x0`3 @ 0x0`3 @ 0x6`4 @ value`16
 	strr    {r2: register}, {r1: register}                    => 0x0`3 @ r2`3 @ r1`3 @ 0x1`3 @ 0x6`4
 
 	ldi     {value: u9}, {ro: register}                       => value`9 @ ro`3 @ 0x7`4
 	uart                                                      => 0x0`12 @ 0x8`4
 }
+
+
 
