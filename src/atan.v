@@ -23,7 +23,7 @@ module cordic_atan (
     reg [3:0] i;
 
     always @* begin
-        //Intialize with input values at the beginning of the calculation
+        //Initialize with input values at the beginning of the calculation
         x = x_in;
         y = y_in;
         z = 0;
