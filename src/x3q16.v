@@ -1,20 +1,14 @@
 module x3q16 (
-		input clk,
-		input reset,
+		input wire clk,
+		input wire reset,
 
-		input [15:0] memory_in,
-		input memory_ready,
-		input write_complete,
-
-		input uart_inbound,
-		input memory_critical,
-
-		output reg [15:0] request_address,
-		output reg request_type, //0 is read, 1 is writes data_out to address
-		output reg request,
-		output reg [15:0] data_out,
-
-		output wire tx
+		output wire tx,
+		input wire rx,
+	
+		input wire miso,
+		output wire mosi,
+		output wire sck,
+		output wire cs
 	);
 	reg [15:0] current_address; //!!!CURRENT INSTRUCTION ADDRESS!!!
 	reg [15:0] current_instruction; 
@@ -50,16 +44,60 @@ module x3q16 (
 	);
 	
 	reg uart_send, uart_set;
-	reg [15:0]uart_data;
+	reg [15:0] data;
 	wire uart_busy;
-	uart_tx uart (
+
+	uart_tx uart_t (
 		.clk(clk),
 		.reset(reset),
-		.data(uart_data),
+		.data(data[12:0]),
 		.send(uart_send),
 		.set(uart_set),
 		.tx_reg(tx),
 		.busy(uart_busy)
+	);
+
+	wire uart_inbound;
+	wire [7:0]uart_data;
+
+	uart_rx uart_r (
+		.clk(clk),
+		.reset(reset),
+		.rx(rx),
+		.speed(data[12:0]),
+		.set_speed(uart_set),
+		.uart_inbound(uart_inbound),
+		.data_received(uart_data)
+	);
+
+	wire memory_critical, write_complete, memory_ready;
+	wire [15:0] memory_in;
+
+	reg [15:0] request_address;
+	reg request_type, request, spo_store;
+
+	spi_memory_interface spi_memory (
+		.clk(clk),
+		.reset(reset),
+
+		.memory_write(data),
+		.request_address(request_address),
+		.request_type(request_type),
+		.request(request),
+
+		.data_out(memory_in),
+		.memory_ready(memory_ready),
+		.write_complete(write_complete),
+		.memory_critical(memory_critical),
+
+		.miso(miso),
+		.sck(sck),
+		.cs(cs),
+		.mosi(mosi),
+
+		.special_operation(spo_store),
+		.uart_inbound(uart_inbound),
+		.uart_data(uart_data)
 	);
 
 	integer i;
@@ -77,7 +115,6 @@ module x3q16 (
 			request_address <= 16'b0;
 			request_type <= 1'b0;
 			request <= 1'b1;
-			data_out <= 16'b0;
 			uart_send <= 1'b0;
 			execution_stage <= 3'b000;
 			alu_a <= 16'b0;
@@ -86,7 +123,8 @@ module x3q16 (
 			jump_con <= 1'b0;
 			uart_send <= 1'b0;
 			uart_set <= 1'b0;
-			uart_data <= 16'b0;
+			data <= 16'b0;
+			spo_store <= 1'b0;
 		end else begin
 			if (uart_inbound) begin
 				registers[1][0] <= 1'b1;
@@ -99,6 +137,7 @@ module x3q16 (
 			request <= 1'b0;
 			uart_send <= 1'b0;
 			uart_set <= 1'b0;
+			spo_store <= 1'b0;
 
 			// execution
 			case (execution_stage)
@@ -150,7 +189,7 @@ module x3q16 (
 							execution_stage <= 3'b010;
 						end
 						4'b0110: begin //Store
-							data_out <= registers[reg2];
+							data <= registers[reg2];
 							if (settings[0]) begin
 								request_address <= registers[reg1];
 								request_type <= 1'b1;
@@ -160,15 +199,19 @@ module x3q16 (
 							execution_stage <= 3'b010;
 						end
 						4'b0111: begin //Load Immediate
-							registers[reg_out] <= {imm_upper, 7'b0};
+							registers[settings] <= {imm_upper, 7'b0};
 							execution_stage <= 3'b100;
 						end
 						4'b1000: begin //Uart Call
 							if (~uart_busy) begin
 								if (settings[0]) uart_set <= 1'b1; else uart_send <= 1'b1;
-								uart_data <= registers[reg1];
+								data <= registers[reg1];
 								execution_stage <= 3'b100;
 							end
+						end
+						4'b1111: begin
+							if (settings == 3'b000) spo_store <= 1'b1;
+							execution_stage <= 3'b100;
 						end
 					endcase
 				end
@@ -253,7 +296,7 @@ module x3q16 (
 					execution_stage <= 3'b000;
 					request_type <= 1'b0;
 					request <= 1'b1;
-					data_out <= 16'b0;
+					data <= 16'b0;
 					alu_mode <= 3'b000;
 				end
 				3'b101: begin // Setup stage 2
