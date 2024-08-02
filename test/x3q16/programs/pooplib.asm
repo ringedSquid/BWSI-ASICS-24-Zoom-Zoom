@@ -9,5 +9,6 @@
 						asm { ldi value[15:8] @ 0x0`1, r2 } @ 
 						asm { addi {ro}, value[7:0] }
 					      }
+	not {r1: register}, {ro: register} => asm { nand {r1}, {r1}, {ro} }
 	
 }
