@@ -1,3 +1,4 @@
+(* keep_hierarchy *)
 module x3q16 (
 		input wire clk,
 		input wire reset,

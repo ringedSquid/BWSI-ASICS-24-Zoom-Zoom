@@ -1,3 +1,4 @@
+(* keep_hierarchy *)
 module spi_memory_interface (
 		input wire clk,
 		input wire reset,
@@ -115,6 +116,7 @@ module spi_memory_interface (
 					if (section == 2'b01) begin
 						active_register <= {1'b0, address[15:1]};
 						mosi <= address[1];
+						stage <= 3'b110;
 					end else if (section == 2'b10) begin
 						data_out <= active_register;
 						section <= 2'b11;
@@ -188,7 +190,13 @@ module spi_memory_interface (
 										end
 									end
 									2'b10: begin
-
+										if (section == 2'b00) begin
+											stage <= 3'b001;
+											section <= 2'b01;
+										end else if (section == 2'b01) begin
+											stage <= 3'b111;
+											section <= 2'b10;
+										end
 									end
 									2'b11: begin
 										if (section == 2'b00) begin
@@ -218,6 +226,7 @@ module spi_memory_interface (
 						end else begin
 							if (bit_counter == bit_count) begin
 								bit_counter <= 4'b0;
+								stage <= 3'b001;
 							end else begin
 								sck_reg <= 1'b1;
 							end

@@ -1,3 +1,4 @@
+(* keep_hierarchy *)
 module uart_rx (
 		input wire clk,
 		input wire reset,

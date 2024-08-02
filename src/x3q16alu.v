@@ -1,3 +1,4 @@
+(* keep_hierarchy *)
 module x3q16alu (
 		input [15:0] a,
 		input [15:0] b,
