@@ -1,4 +1,3 @@
-`include "x3q16alu.v"
 module x3q16 (
 		input clk,
 		input reset,
@@ -13,8 +12,9 @@ module x3q16 (
 		output reg [15:0] request_address,
 		output reg request_type, //0 is read, 1 is writes data_out to address
 		output reg request,
-		output reg uart_send, //just do what you need to store it while it is being sent; uses data_out
-		output reg [15:0] data_out
+		output reg [15:0] data_out,
+
+		output wire tx
 	);
 	reg [15:0] current_address; //!!!CURRENT INSTRUCTION ADDRESS!!!
 	reg [15:0] current_instruction; 
@@ -48,6 +48,19 @@ module x3q16 (
 		.equal_flag(eF),
 		.greater_a_flag(gaF)
 	);
+	
+	reg uart_send, uart_set;
+	reg [15:0]uart_data;
+	wire uart_busy;
+	uart_tx uart (
+		.clk(clk),
+		.reset(reset),
+		.data(uart_data),
+		.send(uart_send),
+		.set(uart_set),
+		.tx_reg(tx),
+		.busy(uart_busy)
+	);
 
 	integer i;
 	reg [2:0] execution_stage;
@@ -71,6 +84,9 @@ module x3q16 (
 			alu_b <= 16'b0;
 			alu_mode <= 3'b0;
 			jump_con <= 1'b0;
+			uart_send <= 1'b0;
+			uart_set <= 1'b0;
+			uart_data <= 16'b0;
 		end else begin
 			if (uart_inbound) begin
 				registers[1][0] <= 1'b1;
@@ -81,6 +97,8 @@ module x3q16 (
 			end
 			registers[0] <= 16'b0;
 			request <= 1'b0;
+			uart_send <= 1'b0;
+			uart_set <= 1'b0;
 
 			// execution
 			case (execution_stage)
@@ -146,9 +164,11 @@ module x3q16 (
 							execution_stage <= 3'b100;
 						end
 						4'b1000: begin //Uart Call
-							data_out <= registers[reg1];
-							uart_send <= 1'b1;
-							execution_stage <= 3'b100;
+							if (~uart_busy) begin
+								if (settings[0]) uart_set <= 1'b1; else uart_send <= 1'b1;
+								uart_data <= registers[reg1];
+								execution_stage <= 3'b100;
+							end
 						end
 					endcase
 				end
@@ -234,7 +254,6 @@ module x3q16 (
 					request_type <= 1'b0;
 					request <= 1'b1;
 					data_out <= 16'b0;
-					uart_send <= 1'b0;
 					alu_mode <= 3'b000;
 				end
 				3'b101: begin // Setup stage 2
