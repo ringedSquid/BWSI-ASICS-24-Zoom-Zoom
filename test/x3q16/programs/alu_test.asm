@@ -1,17 +1,15 @@
 #include "x3q16_ruleset.asm"
 #include "pooplib.asm"
-jmpi main
-
-main:
-	mov 0x1, r3 ;1+1
-	mov 0x1, r4
-	add r3, r4, r5
-	str r5, 0xf1
-	jmpi end
-	
+init:
+	jmpi main
 end:
 	jmpi 0xffff
-	
+main:
+	mov 0x1, r3
+	mov 0x1, r4
+	add r3, r4, r3
+	str r3, 0xf1
+	jmpi end
 
 
 

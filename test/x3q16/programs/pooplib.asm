@@ -3,7 +3,7 @@
 #once
 #ruledef 
 {
-	{value: u16}	 		   => value`16
+	{value: u16}			   => value`16
 	mov {r1: register}, {r2: register} => asm { add {r1}, r0, {r2} }
 	mov {value: u16}, {ro: register}   => {
 						asm { ldi value[15:8] @ 0x0`1, r2 } @ 

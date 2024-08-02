@@ -11,6 +11,12 @@ fi
 
 #assemble program
 
+customasm $1 -f annotatedbin -o program.bin
+echo ""
+echo "Annotated:"
+cat program.bin
+echo ""
+
 customasm $1 -f hexstr -o program.bin
 cp $2 program_checks.tv
 echo ""
