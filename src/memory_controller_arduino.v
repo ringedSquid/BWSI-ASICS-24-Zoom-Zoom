@@ -25,7 +25,6 @@ module memory_controller (
     inout [7:0] data_pins /io pins
 );
 
-    // State machine states using `parameter` for Verilog compatibility
     parameter IDLE = 4'b0000;
     parameter WRITE_SETUP = 4'b0001;
     parameter WRITE_WAIT_1 = 4'b0010;
@@ -54,8 +53,8 @@ module memory_controller (
     assign data_pins = data_direction ? data_bus : 8'bZ; //so i can use io for both in and out
 
     // Counters to create delay/wait cycles
-    reg [5:0] wait_counter; // Increased counter width for higher wait cycles
-    parameter WAIT_CYCLES = 6'd4; // Adjusted for ESP32 at 240 MHz with a safety buffer
+    reg [5:0] wait_counter; 
+    parameter WAIT_CYCLES = 6'd4; 
 
     always @(posedge clk or posedge reset) begin
         if (reset) begin
@@ -86,7 +85,7 @@ module memory_controller (
         upper_bit = 1'b0;
         data_direction = 1'b0;
         data_bus = 8'b0;
-        next_state = state; // Default to stay in the same state
+        next_state = state; 
 
         case (state)
             IDLE: begin
