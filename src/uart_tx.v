@@ -26,32 +26,32 @@ module uart_tx (
             tx_reg <= 1'b1;
             cycles_per_bit <= UART_SPEED_DEFAULT;
             cycle_counter <= 16'h0;
-            stage <= 2'h00;
+            stage <= 2'b00;
         end else if (set) begin
             cycles_per_bit <= data;
         end else begin
             case (stage)
-                2'h00: begin
+                2'b00: begin
                     if (send) begin
                         tx_reg <= 1'b0;
                         cycle_counter <= 16'h0000;
-                        stage <= 2'h01;
+                        stage <= 2'b01;
                         data_sending <= data[7:0];
                         busy <= 1'b1;
                     end
                 end
-                2'h01: begin
+                2'b01: begin
                     if (cycle_counter == cycles_per_bit) begin
                         cycle_counter <= 16'h0000;
                         tx_reg <= data_sending[bit_counter];
                         if (bit_counter == 3'b111) begin
-                            stage <= 2'h02;
+                            stage <= 2'b10;
                         end else begin
                             bit_counter <= bit_counter + 3'b001;
                         end    
                     end else cycle_counter <= cycle_counter + 16'h0001;
                 end
-                2'h02: begin
+                2'b10: begin
                     if (cycle_counter == cycles_per_bit) begin
                         bit_counter <= 3'b000;
                         tx_reg <= 1'b1;
