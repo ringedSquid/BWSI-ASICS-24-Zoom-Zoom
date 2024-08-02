@@ -1,121 +1,123 @@
-#define MEMORY_SIZE 768 // Adjust this based on available SRAM
+const int WRITE_ENABLE_PIN = 2;
+const int REGISTER_ENABLE_PIN = 3;
+const int READ_ENABLE_PIN = 4;
+const int LOWER_BIT_PIN = 5;
+const int UPPER_BIT_PIN = 6;
 
-const int dataPins[8] = {2, 3, 4, 5, 6, 7, 8, 9}; // 8-bit data bus
-const int lowerBytePin = 10;  // Pin to specify lower byte
-const int upperBytePin = 11;  // Pin to specify upper byte
-const int requestPin = 22;
-const int controlSignalPin1 = 29; // Control signal bit 1
-const int controlSignalPin2 = 30; // Control signal bit 2
-const int lowerByteIndicatorPin = 31; // Pin to indicate lower byte being sent
-const int upperByteIndicatorPin = 32; // Pin to indicate upper byte being sent
-uint16_t memory[MEMORY_SIZE]; // 16-bit memory array
-uint16_t currentAddress = 0; // current address
-uint8_t currentLowerByte = 0; // current lower byte
-uint8_t currentUpperByte = 0; // current upper byte
+const int LOWER_BYTE_IN_PIN = 7;
+const int UPPER_BYTE_IN_PIN = 8;
 
-void writeMemory(uint16_t address, uint16_t data) {
-  if (address < MEMORY_SIZE) {
-    memory[address] = data;
-  }
-}
+const int DATA_BUS_PINS[] = {9, 10, 11, 12, 13, 14, 15, 16};
 
-uint16_t readMemory(uint16_t address) {
-  if (address < MEMORY_SIZE) {
-    return memory[address];
-  }
-  return 0;
-}
+uint8_t sram[1024 * 1024]; // 1MB of SRAM
 
 void setup() {
+  pinMode(WRITE_ENABLE_PIN, INPUT);
+  pinMode(REGISTER_ENABLE_PIN, INPUT);
+  pinMode(READ_ENABLE_PIN, INPUT);
+  pinMode(LOWER_BIT_PIN, INPUT);
+  pinMode(UPPER_BIT_PIN, INPUT);
+
+  pinMode(LOWER_BYTE_IN_PIN, OUTPUT);
+  pinMode(UPPER_BYTE_IN_PIN, OUTPUT);
+
   for (int i = 0; i < 8; i++) {
-    pinMode(dataPins[i], INPUT_PULLUP);
+    pinMode(DATA_BUS_PINS[i], INPUT);
   }
 
-  pinMode(requestPin, INPUT_PULLUP);
-  pinMode(controlSignalPin1, INPUT_PULLUP);
-  pinMode(controlSignalPin2, INPUT_PULLUP);
-  pinMode(lowerBytePin, INPUT_PULLUP);
-  pinMode(upperBytePin, INPUT_PULLUP);
-  pinMode(lowerByteIndicatorPin, OUTPUT);
-  pinMode(upperByteIndicatorPin, OUTPUT);
-
-  Serial.begin(9600);
-  digitalWrite(lowerByteIndicatorPin, LOW);
-  digitalWrite(upperByteIndicatorPin, LOW);
+  memset(sram, 0, sizeof(sram));
 }
 
 void loop() {
-  if (digitalRead(requestPin) == LOW) {
-    uint8_t controlSignal = (digitalRead(controlSignalPin1) << 1) | digitalRead(controlSignalPin2);
+  if (digitalRead(WRITE_ENABLE_PIN) == HIGH) {
+    handleWriteOperation();
+  }
 
-    switch (controlSignal) {
-      case 0b00: //no operation
-        break;
-      case 0b01: //write operation
-        handleWriteOperation();
-        break;
-      case 0b10: //read operation
-        handleReadOperation();
-        break;
-      case 0b11: //select address
-        handleSelectAddress();
-        break;
-    }
+  if (digitalRead(READ_ENABLE_PIN) == HIGH) {
+    handleReadOperation();
   }
 }
 
-//select address instruction
-void handleSelectAddress() {
-  if (digitalRead(lowerBytePin) == HIGH) {
-    currentLowerByte = readDataBus();
-  } else if (digitalRead(upperBytePin) == HIGH) {
-    currentUpperByte = readDataBus();
-    currentAddress = (currentUpperByte << 8) | currentLowerByte;
-  }
-}
-
-//write operation
 void handleWriteOperation() {
-  if (digitalRead(lowerBytePin) == HIGH) {
-    currentLowerByte = readDataBus();
-  } else if (digitalRead(upperBytePin) == HIGH) {
-    currentUpperByte = readDataBus();
-    uint16_t data = (currentUpperByte << 8) | currentLowerByte;
-    writeMemory(currentAddress, data);
+  static uint32_t address = 0;
+
+  if (digitalRead(REGISTER_ENABLE_PIN) == HIGH && digitalRead(LOWER_BIT_PIN) == HIGH) {
+    setDataBusDirection(INPUT);
+    uint8_t lowerAddress = readBus(DATA_BUS_PINS);
+    address = (address & 0xFFFFFF00) | lowerAddress;
+    delayMicroseconds(1);
+  }
+
+  if (digitalRead(REGISTER_ENABLE_PIN) == HIGH && digitalRead(UPPER_BIT_PIN) == HIGH) {
+    uint8_t upperAddress = readBus(DATA_BUS_PINS);
+    address = (upperAddress << 8) | (address & 0xFFFF00FF);
+    delayMicroseconds(1);
+  }
+
+  if (digitalRead(LOWER_BIT_PIN) == HIGH && digitalRead(REGISTER_ENABLE_PIN) == LOW) {
+    setDataBusDirection(INPUT);
+    uint8_t lowerData = readBus(DATA_BUS_PINS);
+    sram[address] = lowerData;
+    delayMicroseconds(1);
+  }
+
+  if (digitalRead(UPPER_BIT_PIN) == HIGH) {
+    setDataBusDirection(INPUT);
+    uint8_t upperData = readBus(DATA_BUS_PINS);
+    sram[address + 1] = upperData;
+    delayMicroseconds(1);
+    setDataBusDirection(INPUT);
   }
 }
 
-//read operation
 void handleReadOperation() {
-  uint16_t data = readMemory(currentAddress);
-  if (digitalRead(lowerBytePin) == HIGH) {
-    digitalWrite(lowerByteIndicatorPin, HIGH); 
-    writeDataBus(data & 0x00FF);
-    digitalWrite(lowerByteIndicatorPin, LOW);
-  } else if (digitalRead(upperBytePin) == HIGH) {
-    digitalWrite(upperByteIndicatorPin, HIGH); 
-    writeDataBus(data >> 8);
-    digitalWrite(upperByteIndicatorPin, LOW);
+  static uint32_t address = 0;
+
+  if (digitalRead(REGISTER_ENABLE_PIN) == HIGH && digitalRead(LOWER_BIT_PIN) == HIGH) {
+    setDataBusDirection(INPUT);
+    uint8_t lowerAddress = readBus(DATA_BUS_PINS);
+    address = (address & 0xFFFFFF00) | lowerAddress;
+    delayMicroseconds(1);
+  }
+
+  if (digitalRead(REGISTER_ENABLE_PIN) == HIGH && digitalRead(UPPER_BIT_PIN) == HIGH) {
+    uint8_t upperAddress = readBus(DATA_BUS_PINS);
+    address = (upperAddress << 8) | (address & 0xFFFF00FF);
+    delayMicroseconds(1);
+  }
+
+  digitalWrite(LOWER_BYTE_IN_PIN, HIGH);
+  if (digitalRead(LOWER_BYTE_IN_PIN) == HIGH) {
+    setDataBusDirection(OUTPUT);
+    writeBus(DATA_BUS_PINS, sram[address]);
+    delayMicroseconds(1); //will most likely need to extend delay
+    digitalWrite(LOWER_BYTE_IN_PIN, LOW);
+  }
+
+  digitalWrite(UPPER_BYTE_IN_PIN, HIGH);
+  if (digitalRead(UPPER_BYTE_IN_PIN) == HIGH) {
+    writeBus(DATA_BUS_PINS, sram[address + 1]);
+    delayMicroseconds(1); //will most likely need to extend delay
+    digitalWrite(UPPER_BYTE_IN_PIN, LOW);
   }
 }
 
-//read databus function
-uint8_t readDataBus() {
-  uint8_t data = 0;
+void setDataBusDirection(bool direction) {
   for (int i = 0; i < 8; i++) {
-    data |= (digitalRead(dataPins[i]) << i);
+    pinMode(DATA_BUS_PINS[i], direction ? OUTPUT : INPUT);
   }
-  return data;
 }
 
-//write data bus fucntion
-void writeDataBus(uint8_t data) {
+uint8_t readBus(const int* pins) {
+  uint8_t value = 0;
   for (int i = 0; i < 8; i++) {
-    pinMode(dataPins[i], OUTPUT);
-    digitalWrite(dataPins[i], (data >> i) & 0x01);
+    value |= (digitalRead(pins[i]) << i);
   }
-  //set pins to input
+  return value;
+}
+
+void writeBus(const int* pins, uint8_t value) {
   for (int i = 0; i < 8; i++) {
-    pinMode(dataPins[i], INPUT_PULLUP);
+    digitalWrite(pins[i], (value >> i) & 0x01);
   }
 }
