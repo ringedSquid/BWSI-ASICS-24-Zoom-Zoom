@@ -22,9 +22,8 @@ module memory_controller_arduino (
     input lower_byte_in,
     input upper_byte_in,
 
-    // Separate input and output for data handling
-    input [7:0] data_input_pins, // Input data pins from Arduino
-    output reg [7:0] data_output_pins // Output data pins to Arduino
+    input [7:0] data_input_pins, 
+    output reg [7:0] data_output_pins 
 );
 
     parameter IDLE = 5'b00000;
@@ -49,7 +48,7 @@ module memory_controller_arduino (
 
     reg [4:0] state, next_state;
 
-    reg [7:0] data_bus; // Internal data bus
+    reg [7:0] data_bus; 
 
     // Counters to create delay/wait cycles
     reg [5:0] wait_counter; 
@@ -68,7 +67,7 @@ module memory_controller_arduino (
             data_bus <= 8'b0;
             data_in <= 16'b0;
             wait_counter <= 6'b0;
-            data_output_pins <= 8'b0; // Reset output pins
+            data_output_pins <= 8'b0; 
         end else begin
             state <= next_state;
 
@@ -80,7 +79,6 @@ module memory_controller_arduino (
                 wait_counter <= 6'b0;
             end
 
-            // Next state and output logic
             case (state)
                 IDLE: begin
                     memory_ready <= 1'b0;
@@ -108,7 +106,7 @@ module memory_controller_arduino (
                     write_enable <= 1'b1;
                     register_enable <= 1'b1;
                     lower_bit <= 1'b1;
-                    data_output_pins <= request_address[7:0]; // Load lower bits of address to output
+                    data_output_pins <= request_address[7:0]; 
                     next_state <= WRITE_WAIT_1;
                 end
 
@@ -123,7 +121,7 @@ module memory_controller_arduino (
                 WRITE_ADDRESS_UPPER: begin
                     lower_bit <= 1'b0;
                     upper_bit <= 1'b1;
-                    data_output_pins <= request_address[15:8]; // Load upper bits of address to output
+                    data_output_pins <= request_address[15:8]; 
                     next_state <= WRITE_WAIT_2;
                 end
 
@@ -139,7 +137,7 @@ module memory_controller_arduino (
                     register_enable <= 1'b0;
                     lower_bit <= 1'b1;
                     upper_bit <= 1'b0;
-                    data_output_pins <= data_out[7:0]; // Load lower byte of data to output
+                    data_output_pins <= data_out[7:0]; 
                     next_state <= WRITE_WAIT_3;
                 end
 
@@ -154,7 +152,7 @@ module memory_controller_arduino (
                 LOAD_DATA_UPPER: begin
                     lower_bit <= 1'b0;
                     upper_bit <= 1'b1;
-                    data_output_pins <= data_out[15:8]; // Load upper byte of data to output
+                    data_output_pins <= data_out[15:8]; 
                     next_state <= WRITE_WAIT_4;
                 end
 
@@ -178,7 +176,7 @@ module memory_controller_arduino (
                     read_enable <= 1'b1;
                     register_enable <= 1'b1;
                     lower_bit <= 1'b1;
-                    data_output_pins <= request_address[7:0]; // Load lower bits of address to output
+                    data_output_pins <= request_address[7:0]; 
                     next_state <= READ_WAIT_1;
                 end
 
@@ -193,7 +191,7 @@ module memory_controller_arduino (
                 READ_ADDRESS_UPPER: begin
                     lower_bit <= 1'b0;
                     upper_bit <= 1'b1;
-                    data_output_pins <= request_address[15:8]; // Load upper bits of address to output
+                    data_output_pins <= request_address[15:8]; 
                     next_state <= READ_WAIT_2;
                 end
 
@@ -207,7 +205,7 @@ module memory_controller_arduino (
 
                 READ_WAIT_FOR_LOWER_BYTE: begin
                     if (lower_byte_in) begin
-                        data_in[7:0] <= data_input_pins; // Capture lower byte from input
+                        data_in[7:0] <= data_input_pins; 
                         next_state <= READ_LOWER_BYTE;
                     end else begin
                         next_state <= READ_WAIT_FOR_LOWER_BYTE;
@@ -215,7 +213,7 @@ module memory_controller_arduino (
                 end
 
                 READ_LOWER_BYTE: begin
-                    data_in[7:0] <= data_input_pins; // Capture lower byte from input
+                    data_in[7:0] <= data_input_pins; 
                     next_state <= READ_WAIT_FOR_UPPER_BYTE;
                 end
 
@@ -228,7 +226,7 @@ module memory_controller_arduino (
                 end
 
                 READ_UPPER_BYTE: begin
-                    data_in[15:8] <= data_input_pins; // Capture upper byte from input
+                    data_in[15:8] <= data_input_pins; 
                     next_state <= READ_COMPLETE;
                 end
 
@@ -239,7 +237,7 @@ module memory_controller_arduino (
                 end
 
                 default: begin
-                    next_state <= IDLE; // Default to a safe state
+                    next_state <= IDLE; 
                 end
             endcase
         end
