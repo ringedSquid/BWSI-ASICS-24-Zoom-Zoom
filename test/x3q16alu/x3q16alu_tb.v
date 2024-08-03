@@ -71,6 +71,7 @@ module x3q16alu_tb;
 			begin
 				$display("Error: Inputs: a = %b, b = %b, mode = %b", a, b, mode);
 				$display("       Outputs: result = %b, ef = %b, gf = %b", result, equal_flag, greater_a_flag);
+				$display("	 Expected Out: result = %b, ef = %b, gf = %b", expected_result, expected_equal_flag, expected_greater_a_flag);
 				errors = errors + 1;
 			end
 			

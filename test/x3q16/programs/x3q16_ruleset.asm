@@ -1,4 +1,7 @@
 #once
+
+#bits 16 ;
+
 #subruledef register
 {
 	r0 => 0x0
