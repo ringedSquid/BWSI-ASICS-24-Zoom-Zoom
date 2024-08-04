@@ -1,8 +1,10 @@
 ![](../../workflows/gds/badge.svg) ![](../../workflows/docs/badge.svg) ![](../../workflows/test/badge.svg) ![](../../workflows/fpga/badge.svg)
 
-# Tiny Tapeout Verilog Project Template
+# Zoom Zoom!
 
-- [Read the documentation for project](docs/info.md)
+Zoom Zoom is a custom, 16-bit, barebones CPU. We store memory externally using either a custom parallel connection or SPI. We also have a simple UART protocal implemented on the CPU as well as numerous accelerators(that may not be included in the final design due to size constraints).
+
+- [Read the documentation for our project](docs/info.md)
 
 ## What is Tiny Tapeout?
 

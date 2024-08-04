@@ -28,7 +28,7 @@ Zoom Zoom is a custom, 16-bit, barebones CPU. We store memory externally using e
 
 ## The Architecture
 
-
+![](microinstruct.png)
 
 ### Instruction Layout
 
@@ -72,10 +72,21 @@ Zoom Zoom is a custom, 16-bit, barebones CPU. We store memory externally using e
 | jmpu        |  Jump if UART Flagged  |   A   |  0100  |   101    | reg_out = inst addr; if (UF) { inst addr = reg1 }  |
 | jmpi        |    Jump   Immediate    |   A   |  0100  |   110    | inst addr = mem[inst addr + 1]                     |
 
-
 ## Programming the CPU
 
+> :warning: **Memory Address 769 is reserved**: The Assembler does not give a warning currently!
 
+To assemble, we use [custoasm](https://github.com/hlorenzi/customasm) with installation instructions [here](https://github.com/hlorenzi/customasm?tab=readme-ov-file#installation). We recommend installation via rust's package manager by running ```cargo install customasm```. You can then compile an assembly file by running ```customasm -o <outputfilename> <filename>```. The format for the assembly file is to add ```#include "x3q16_ruleset.asm"``` to the top of each .asm file as well as that file which is located [here](../asm/x3q16_ruleset.asm). Instruction memory and General Purpose are all located in the same place. Thus, to store general values in memory, just jump to wherever you store it in memory.
+
+## Accelerators
+
+> :warning: **Many are still a work in progress or aren't supported by the assembler**
+
+### Keccakf1600
+
+Approximately 50% of the computational time for the Kyber Algorithm is hashing needed for random number generation. The Kyber algorthm uses SHA-3 and SHAKE algorithms to generate cryptographically secure random polynomials and numbers. Both of these algorithm rely on the keccakf1600 state permutation which target to accelerate. More information on the keccak algorithm can be found [here](https://keccak.team/keccak_specs_summary.html) and the kyber algorithm [here](https://pq-crystals.org/kyber/data/kyber-specification-round3-20210804.pdf).
+
+The branch ```keccak_integration``` holds a complete state permuation accelerator however this is not included in main since it's too big to fit for tinytapeout. A smaller accelerator is currently being worked on.
 
 ## How to test
 
