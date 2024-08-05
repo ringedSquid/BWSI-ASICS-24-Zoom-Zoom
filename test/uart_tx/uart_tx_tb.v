@@ -4,7 +4,7 @@ module uart_tx_tb;
 	//i/0 for uart
 	reg clk;
 	reg reset;
-	reg [15:0] data;
+	reg [12:0] data;
 	reg send;
 	reg set;
 
@@ -14,7 +14,7 @@ module uart_tx_tb;
 	//for testbench
 	reg [31:0] vectornum;
 	reg [31:0] errors;
-	reg [19:0] testvectors [100000:0];
+	reg [16:0] testvectors [100000:0];
 
 	//for waiting
 	reg [31:0] bitcount;
@@ -64,7 +64,7 @@ module uart_tx_tb;
 	always @(posedge clk) begin
 	        #1;	
 		if (~reset && (bitcount === 0)) begin
-			data <= testvectors[vectornum][19:4];
+			data <= testvectors[vectornum][16:4];
 			send <= testvectors[vectornum][3];
 			set <= testvectors[vectornum][2];
 			expected_busy <= testvectors[vectornum][1];
@@ -94,7 +94,7 @@ module uart_tx_tb;
 
 				vectornum = vectornum + 1;
 
-				if (testvectors[vectornum] === 20'bx) begin
+				if (vectornum == 700) begin
 					$display("%d tests completed with %d errors", vectornum, errors);
 					$finish;		
 				end

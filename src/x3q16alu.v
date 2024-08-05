@@ -1,3 +1,4 @@
+(* keep_hierarchy *)
 module x3q16alu (
 		input [15:0] a,
 		input [15:0] b,
@@ -26,7 +27,6 @@ module x3q16alu (
 			3'b011: result = ~(a & b);
 			3'b100: result = a << 1;
 			3'b101: result = a >> 1;
-			default: result = 16'h0000;
 		endcase
 
 		equal_flag = sub == 16'h0000;
