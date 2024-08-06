@@ -4,7 +4,7 @@ module keccak_alu (
     output reg [63:0] keccak_output
 );
 
-  function [63:0] ROL(input [63:0] a, input [5:0] offset);
+  function [63:0] ROL(input [63:0] a, input [63:0] offset);
     begin
       ROL = (a << offset) ^ (a >> (64 - offset));
     end
