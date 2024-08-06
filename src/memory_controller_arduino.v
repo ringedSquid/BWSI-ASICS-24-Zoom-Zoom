@@ -6,8 +6,8 @@ module memory_controller_arduino (
     input [15:0] request_address,
     input request_type, // 0 for read, 1 for write
     input request,
-    input [15:0] data_out,
-    output reg [15:0] data_in,
+    input [15:0] memory_write, 
+    output reg [15:0] data_out, 
     output reg memory_ready,
     output reg write_complete,
 
@@ -23,7 +23,19 @@ module memory_controller_arduino (
     input upper_byte_in,
 
     input [7:0] data_input_pins, 
-    output reg [7:0] data_output_pins 
+    output reg [7:0] data_output_pins,
+
+    // New iovalue signal
+    output reg iovalue,  // 0: input, 1: output
+
+    // UART inputs
+    input uart_inbound,
+    input [7:0] uart_data,
+
+    // UART outputs (for transmitting data)
+    output reg uart_send,
+    output reg [7:0] uart_tx_data,
+    input uart_busy
 );
 
     parameter IDLE = 5'b00000;
@@ -45,14 +57,18 @@ module memory_controller_arduino (
     parameter READ_WAIT_FOR_UPPER_BYTE = 5'b10000;
     parameter READ_UPPER_BYTE = 5'b10001;
     parameter READ_COMPLETE = 5'b10010;
+    parameter UART_RECEIVE = 5'b10011;
+    parameter UART_TRANSMIT = 5'b10100;
 
     reg [4:0] state, next_state;
 
     reg [7:0] data_bus; 
 
-    // Counters to create delay/wait cycles
     reg [5:0] wait_counter; 
     parameter WAIT_CYCLES = 6'd4; 
+
+    reg uart_waiting;  
+    reg [15:0] uart_memory_address; 
 
     always @(posedge clk or posedge reset) begin
         if (reset) begin
@@ -65,9 +81,14 @@ module memory_controller_arduino (
             lower_bit <= 1'b0;
             upper_bit <= 1'b0;
             data_bus <= 8'b0;
-            data_in <= 16'b0;
+            data_out <= 16'b0;
             wait_counter <= 6'b0;
             data_output_pins <= 8'b0; 
+            iovalue <= 1'b0; // Default to input
+            uart_send <= 1'b0;
+            uart_tx_data <= 8'b0;
+            uart_waiting <= 1'b0;
+            uart_memory_address <= 16'b0;
         end else begin
             state <= next_state;
 
@@ -89,10 +110,17 @@ module memory_controller_arduino (
                     lower_bit <= 1'b0;
                     upper_bit <= 1'b0;
                     data_bus <= 8'b0;
-                    data_in <= 16'b0;
+                    data_out <= 16'b0;
                     data_output_pins <= 8'b0;
+                    iovalue <= 1'b0;
 
-                    if (request && request_type == 1'b1) begin
+                    uart_send <= 1'b0;
+
+                    if (uart_inbound) begin
+                        uart_waiting <= 1'b1;
+                        uart_memory_address <= 16'b111111110100000;
+                        next_state <= UART_RECEIVE;
+                    end else if (request && request_type == 1'b1) begin
                         next_state <= WRITE_SETUP;
                     end else if (request && request_type == 1'b0) begin
                         next_state <= READ_SETUP;
@@ -107,6 +135,7 @@ module memory_controller_arduino (
                     register_enable <= 1'b1;
                     lower_bit <= 1'b1;
                     data_output_pins <= request_address[7:0]; 
+                    iovalue <= 1'b1;
                     next_state <= WRITE_WAIT_1;
                 end
 
@@ -137,7 +166,7 @@ module memory_controller_arduino (
                     register_enable <= 1'b0;
                     lower_bit <= 1'b1;
                     upper_bit <= 1'b0;
-                    data_output_pins <= data_out[7:0]; 
+                    data_output_pins <= memory_write[7:0]; 
                     next_state <= WRITE_WAIT_3;
                 end
 
@@ -152,7 +181,7 @@ module memory_controller_arduino (
                 LOAD_DATA_UPPER: begin
                     lower_bit <= 1'b0;
                     upper_bit <= 1'b1;
-                    data_output_pins <= data_out[15:8]; 
+                    data_output_pins <= memory_write[15:8]; 
                     next_state <= WRITE_WAIT_4;
                 end
 
@@ -168,6 +197,7 @@ module memory_controller_arduino (
                     write_enable <= 1'b0;
                     upper_bit <= 1'b0;
                     write_complete <= 1'b1;
+                    iovalue <= 1'b0;
                     next_state <= IDLE;
                 end
 
@@ -204,8 +234,9 @@ module memory_controller_arduino (
                 end
 
                 READ_WAIT_FOR_LOWER_BYTE: begin
+                    iovalue <= 1'b0;
                     if (lower_byte_in) begin
-                        data_in[7:0] <= data_input_pins; 
+                        data_out[7:0] <= data_input_pins;
                         next_state <= READ_LOWER_BYTE;
                     end else begin
                         next_state <= READ_WAIT_FOR_LOWER_BYTE;
@@ -213,7 +244,7 @@ module memory_controller_arduino (
                 end
 
                 READ_LOWER_BYTE: begin
-                    data_in[7:0] <= data_input_pins; 
+                    data_out[7:0] <= data_input_pins;
                     next_state <= READ_WAIT_FOR_UPPER_BYTE;
                 end
 
@@ -226,7 +257,7 @@ module memory_controller_arduino (
                 end
 
                 READ_UPPER_BYTE: begin
-                    data_in[15:8] <= data_input_pins; 
+                    data_out[15:8] <= data_input_pins;
                     next_state <= READ_COMPLETE;
                 end
 
@@ -234,6 +265,30 @@ module memory_controller_arduino (
                     read_enable <= 1'b0;
                     memory_ready <= 1'b1;
                     next_state <= IDLE;
+                end
+
+                // UART Receive Operation
+                UART_RECEIVE: begin
+                    if (uart_waiting) begin
+                        uart_waiting <= 1'b0;
+                        data_out[7:0] <= uart_data;
+                        data_out[15:8] <= 8'b0;  
+                        next_state <= READ_COMPLETE;
+                    end else begin
+                        next_state <= IDLE;
+                    end
+                end
+
+                // UART Transmit Operation
+                UART_TRANSMIT: begin
+                    if (!uart_busy) begin
+                        uart_send <= 1'b1;
+                        uart_tx_data <= memory_write[7:0];
+                        next_state <= IDLE;
+                    end else begin
+                        uart_send <= 1'b0;
+                        next_state <= UART_TRANSMIT;
+                    end
                 end
 
                 default: begin
