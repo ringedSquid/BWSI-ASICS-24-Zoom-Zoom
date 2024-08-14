@@ -28,7 +28,7 @@ module x3q16 (
 	wire [7:0] imm_lower;
 	wire [4:0] kreg1;
 	wire [1:0] kreg1_extended;
-	wire ksettings;
+	wire [1:0] ksettings;
 
 	reg [2:0] alu_mode;
 	reg [15:0] alu_a, alu_b;
@@ -44,14 +44,14 @@ module x3q16 (
 	assign imm_upper = current_instruction[15:7];
 	assign kreg1 = current_instruction[11:7];
 	assign kreg1_extended = current_instruction[13:12];
-	assign ksettings = current_instruction[14];
+	assign ksettings = current_instruction[15:14];
 
 	reg [64*5-1:0] keccak_registers;
 	wire [63:0] keccak_output;
 
 	keccak_alu keccak_alu (
 			.registers(keccak_registers),
-			.mode(settings),
+			.mode(ksettings),
 			.keccak_output(keccak_output)
 	);
 
