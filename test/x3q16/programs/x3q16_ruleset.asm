@@ -1,6 +1,11 @@
 #once
 
-#bits 16 ;
+#bankdef main
+{
+    #addr 0x0000
+    #size 0xffff
+    #bits 16
+}
 
 #subruledef register
 {
