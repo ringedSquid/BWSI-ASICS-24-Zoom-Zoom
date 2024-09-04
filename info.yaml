@@ -27,34 +27,34 @@ project:
 # The pinout of your project. Leave unused pins blank. DO NOT delete or add any pins.
 pinout:
   # Inputs
-  ui[0]: "IN1"
-  ui[1]: "IN2"
+  ui[0]: "lower_byte_in"
+  ui[1]: "upper_byte_in"
   ui[2]: "rx"
   ui[3]: "IN3"
   ui[4]: "IN4"
   ui[5]: "IN5"
   ui[6]: "IN6"
-  ui[7]: "reserved"
+  ui[7]: "IN7"
 
   # Outputs
-  uo[0]: "OUT1"
-  uo[1]: "OUT2"
-  uo[2]: "OUT3"
-  uo[3]: "OUT4"
+  uo[0]: "write_enable"
+  uo[1]: "register_enable"
+  uo[2]: "read_enable"
+  uo[3]: "lower_bit"
   uo[4]: "tx"
-  uo[5]: "OUT5"
+  uo[5]: "upper_bit"
   uo[6]: "OUT6"
   uo[7]: "OUT7"
 
   # Bidirectional pins
-  uio[0]: "IN7"
-  uio[1]: "OUT8"
-  uio[2]: "IN8"
-  uio[3]: "OUT9"
-  uio[4]: "OUT10"
-  uio[5]: "IN10"
-  uio[6]: "OUT11"
-  uio[7]: "IN11"
+  uio[0]: "DATA0"
+  uio[1]: "DATA1"
+  uio[2]: "DATA2"
+  uio[3]: "DATA3"
+  uio[4]: "DATA4"
+  uio[5]: "DATA5"
+  uio[6]: "DATA6"
+  uio[7]: "DATA7"
 
 # Do not change!
 yaml_version: 6
