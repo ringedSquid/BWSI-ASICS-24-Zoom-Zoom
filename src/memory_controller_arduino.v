@@ -59,6 +59,8 @@ module memory_controller_arduino (
     parameter READ_COMPLETE = 5'b10010;
     parameter UART_RECEIVE = 5'b10011;
     parameter UART_TRANSMIT = 5'b10100;
+    parameter UART_TRANSMIT_ADDRESS_UPPER = 5'b10110;
+    parameter UART_TRANSMIT_DATA = 5'b10111;
 
     reg [4:0] state, next_state;
 
@@ -279,15 +281,37 @@ module memory_controller_arduino (
                     end
                 end
 
-                // UART Transmit Operation
+                // Updated UART Transmit Operation
                 UART_TRANSMIT: begin
                     if (!uart_busy) begin
                         uart_send <= 1'b1;
-                        uart_tx_data <= memory_write[7:0];
-                        next_state <= IDLE;
+                        uart_tx_data <= uart_memory_address[7:0];  // Send lower byte of address
+                        next_state <= UART_TRANSMIT_ADDRESS_UPPER;
                     end else begin
                         uart_send <= 1'b0;
                         next_state <= UART_TRANSMIT;
+                    end
+                end
+
+                UART_TRANSMIT_ADDRESS_UPPER: begin
+                    if (!uart_busy) begin
+                        uart_send <= 1'b1;
+                        uart_tx_data <= uart_memory_address[15:8];  // Send upper byte of address
+                        next_state <= UART_TRANSMIT_DATA;
+                    end else begin
+                        uart_send <= 1'b0;
+                        next_state <= UART_TRANSMIT_ADDRESS_UPPER;
+                    end
+                end
+
+                UART_TRANSMIT_DATA: begin
+                    if (!uart_busy) begin
+                        uart_send <= 1'b1;
+                        uart_tx_data <= memory_write[7:0];  // Send the data
+                        next_state <= IDLE;
+                    end else begin
+                        uart_send <= 1'b0;
+                        next_state <= UART_TRANSMIT_DATA;
                     end
                 end
 
