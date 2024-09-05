@@ -312,7 +312,7 @@ module x3q16 (
 					data_out <= 16'b0;
 					alu_mode <= 3'b000;
 
-					/*
+					
 					$display("Current Instr: %b", current_instruction);
 					$display("Current Addr: %h", current_address);
 					$display("R0: %h", registers[0]);
@@ -324,7 +324,7 @@ module x3q16 (
 					$display("R6: %h", registers[6]);
 					$display("R7: %h", registers[7]);
 					$display("---------------------------------");
-					*/
+					
 
 				end
 				3'b101: begin // Setup stage 2

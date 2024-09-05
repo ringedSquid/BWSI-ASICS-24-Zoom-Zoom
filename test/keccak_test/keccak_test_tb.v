@@ -1,5 +1,9 @@
 `include "x3q16.v"
+`include "uart_tx.v"
+`include "keccakf1600_statepermutate.v"
+`include "x3q16alu.v"
 
+`timescale 1ns/1ps
 module keccak_test_tb;
 	reg clk;
 	reg reset;
@@ -70,7 +74,7 @@ module keccak_test_tb;
 		state = 1;
 
 		$dumpfile("x3q16_tb.vcd");
-		$dumpvars(0, x3q16_tb);
+		$dumpvars(0, keccak_test_tb);
 
 		memory_ready = 0;
 		write_complete = 1;

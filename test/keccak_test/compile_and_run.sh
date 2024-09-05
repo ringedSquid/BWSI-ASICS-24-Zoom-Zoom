@@ -23,5 +23,5 @@ echo ""
 python3 splice.py
 
 #compile and run verilog
-iverilog x3q16_tb.v -I ../../src/
+iverilog keccak_test_tb.v -I ../../src/
 ./a.out
