@@ -13,6 +13,7 @@ module tt_um_zoom_zoom (
 
   wire [7:0] data_output_pins;  
   wire [15:0] memory_in;
+  wire [7:0] iovalue;
   wire memory_ready;
   wire write_complete;
   wire uart_inbound;
@@ -85,7 +86,7 @@ module tt_um_zoom_zoom (
       .upper_byte_in(upper_byte_in),
       .data_input_pins(data_input_pins),
       .data_output_pins(data_output_pins),  // Connect data_output_pins properly
-      .iovalue(uio_oe),  
+      .iovalue(iovalue),  
       .uart_inbound(uart_inbound),
       .data_received(data_received)
   );
