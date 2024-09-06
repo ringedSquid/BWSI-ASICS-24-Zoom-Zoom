@@ -1,3 +1,4 @@
+(* keep_hierarchy *)
 module uart_rx (
 		input wire clk,
 		input wire reset,
@@ -32,25 +33,27 @@ module uart_rx (
 			case (stage)
 				2'b00: begin
 					if (~rx) begin
-						cycle_counter <= 13'h0;
 						data <= 8'b0;
 						bit_counter <= 3'b0;
 						stage <= 2'b01;
+						cycle_counter <= (cycles_per_bit != 13'b0) ? ((13'b1111111111110 - cycles_per_bit) + 13'h0002) : 13'b0;
 					end
 					uart_inbound <= 1'b0;
+					data_received <= 8'b0;
 				end
 				2'b01: begin
 					if (cycle_counter == cycles_per_bit) begin
 						cycle_counter <= 13'b0;
 						data[bit_counter] <= rx;
-						if (bit_counter == 3'b111) stage <= 2'b10; else bit_counter <= bit_counter + 3'b001;
+						if (bit_counter == 3'b111) begin
+							stage <= 2'b10; 
+						end else bit_counter <= bit_counter + 3'b001;
 					end else cycle_counter <= cycle_counter + 13'b0000000000001;
 				end
 				2'b10: begin
-					uart_inbound <= 1'b1;
-					data_received <= data;
-					stage <= 2'b00;
 					if (cycle_counter == cycles_per_bit) begin
+						uart_inbound <= 1'b1;
+						data_received <= data;
 						stage <= 2'b00;
 					end else cycle_counter <= cycle_counter + 13'b0000000000001;
 				end
