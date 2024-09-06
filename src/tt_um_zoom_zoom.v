@@ -1,14 +1,14 @@
 `default_nettype none
 
 module tt_um_zoom_zoom (
-    input  wire [7:0] ui_in,    // Dedicated inputs
-    output wire [7:0] uo_out,   // Dedicated outputs
-    input  wire [7:0] uio_in,   // IOs: Input path
-    output wire [7:0] uio_out,  // IOs: Output path
-    output wire [7:0] uio_oe,   // IOs: Enable path (active high: 0=input, 1=output)
-    input  wire       ena,      // always 1 when the design is powered, so you can ignore it
-    input  wire       clk,      // clock
-    input  wire       reset     // reset_n - low to reset
+    input  wire [7:0] ui_in,   
+    output wire [7:0] uo_out,   
+    input  wire [7:0] uio_in,  
+    output wire [7:0] uio_out,  
+    output wire [7:0] uio_oe,   
+    input  wire       ena,      
+    input  wire       clk,      
+    input  wire       reset     
 );
 
   wire reset;  
@@ -24,11 +24,12 @@ module tt_um_zoom_zoom (
   wire [7:0] data_input_pins;
   wire [15:0] memory_write;
   wire write_enable, register_enable, read_enable, lower_bit, upper_bit, tx;  
+  wire [7:0] data_received;  // Output from uart_rx
 
   // input
   wire lower_byte_in = ui_in[0];
   wire upper_byte_in = ui_in[1];
-  wire rx = ui_in[2];
+  wire rx = ui_in[2];  // UART RX input
   wire IN3 = ui_in[3];
   wire IN4 = ui_in[4];
   wire IN5 = ui_in[5];
@@ -85,7 +86,18 @@ module tt_um_zoom_zoom (
       .data_input_pins(data_input_pins),
       .data_output_pins(uio_out),
       .iovalue(uio_oe),  
-      .rx(rx)
+      .uart_inbound(uart_inbound),
+      .data_received(data_received)
+  );
+
+  uart_rx uart_receiver (
+      .clk(clk),
+      .reset(reset),
+      .rx(rx),                          
+      .speed(13'h1869),                //unsure andrew
+      .set_speed(1'b0),                 //unsure, just set it to 0
+      .uart_inbound(uart_inbound),      
+      .data_received(data_received)     
   );
 
   // unused pins
