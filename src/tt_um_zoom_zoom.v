@@ -84,7 +84,7 @@ module tt_um_zoom_zoom (
       .lower_byte_in(lower_byte_in),
       .upper_byte_in(upper_byte_in),
       .data_input_pins(data_input_pins),
-      .data_output_pins(uio_out),
+      .data_output_pins(data_output_pins),
       .iovalue(uio_oe),  
       .uart_inbound(uart_inbound),
       .data_received(data_received)
