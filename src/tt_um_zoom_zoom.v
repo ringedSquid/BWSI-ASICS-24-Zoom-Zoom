@@ -8,7 +8,7 @@ module tt_um_zoom_zoom (
     output wire [7:0] uio_oe,   // IOs: Enable path (active high: 0=input, 1=output)
     input  wire       ena,      // always 1 when the design is powered, so you can ignore it
     input  wire       clk,      // clock
-    input  wire       reset     // reset - low to reset
+    input  wire       rst_n     // reset - low to reset
 );
 
   wire [7:0] data_output_pins;  
@@ -54,7 +54,7 @@ module tt_um_zoom_zoom (
 
   x3q16 cpu (
       .clk(clk),
-      .reset(reset),
+      .reset(~rst_n),  // Assuming active-low reset is converted to active-high for submodule
       .memory_in(memory_in),
       .memory_ready(memory_ready),
       .write_complete(write_complete),
@@ -69,7 +69,7 @@ module tt_um_zoom_zoom (
 
   memory_controller_arduino memory_controller (
       .clk(clk),
-      .reset(reset),
+      .reset(~rst_n),  // Assuming active-low reset is converted to active-high for submodule
       .request_address(request_address),
       .request_type(request_type),
       .request(request),
@@ -93,7 +93,7 @@ module tt_um_zoom_zoom (
 
   uart_rx uart_receiver (
       .clk(clk),
-      .reset(reset),
+      .reset(~rst_n),  // Assuming active-low reset is converted to active-high for submodule
       .rx(rx),                          // RX input from ui_in
       .speed(13'h1869),                 // Default speed, or you can use another input if needed
       .set_speed(1'b0),                 // No speed setting input; default to 0
