@@ -53,11 +53,11 @@
 	jmpl    {r1: register}                                    => 0x0`6 @ r1`3 @ 0x3`3 @ 0x0`4
 	jmpm    {r1: register}                                    => 0x0`6 @ r1`3 @ 0x4`3 @ 0x0`4
 	jmpu    {r1: register}                                    => 0x0`6 @ r1`3 @ 0x5`3 @ 0x0`4
-	jmpi    {value: u16}                                      => value`16 @ 0x0`9 @ 0x6`3 @ 0x4`4
+	jmpi    {value: u16}                                      => 0x0`9 @ 0x6`3 @ 0x4`4 @ value`16
 
-	ld      {value: u16}, {ro: register}                      => value`16 @ ro`3 @ 0x0`6 @ 0x0`3 @ 0x5`4 
+	ld      {value: u16}, {ro: register}                      => ro`3 @ 0x0`6 @ 0x0`3 @ 0x5`4 @ value`16
 	ldr     {r1: register}, {ro: register}                    => ro`3 @ 0x0`3 @ r1`3 @ 0x1`3 @ 0x5`4
-	str     {r2: register}, {value: u16}                      => value`16 @ 0x0`3 @ r1`3 @ 0x0`3 @ 0x0`3 @ 0x6`4
+	str     {r2: register}, {value: u16}                      => 0x0`3 @ r1`3 @ 0x0`3 @ 0x0`3 @ 0x6`4 @ value`16
 	strr    {r2: register}, {r1: register}                    => 0x0`3 @ r2`3 @ r1`3 @ 0x1`3 @ 0x6`4
 
 	ldi     {value: u9}, {ro: register}                       => value`9 @ ro`3 @ 0x7`4
@@ -71,4 +71,3 @@
 	krol 																											=> 0x2`2 @ 0x0`10 @ 0x3`4
 	kxor 																											=> 0x3`2 @ 0x0`10 @ 0x3`4
 }
-
