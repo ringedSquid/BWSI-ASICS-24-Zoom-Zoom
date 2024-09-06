@@ -17,6 +17,8 @@ module tt_um_zoom_zoom (
   wire memory_ready;
   wire write_complete;
   wire uart_inbound;
+  wire set_rx_speed;
+  wire [12:0] rx_speed;
   wire [15:0] request_address;
   wire request_type;
   wire request;
@@ -62,7 +64,9 @@ module tt_um_zoom_zoom (
       .request_type(request_type),
       .request(request),
       .data_out(data_out),
-      .tx(tx)  
+      .tx(tx),
+      .set_rx_speed(set_rx_speed),
+      .rx_speed(rx_speed)
   );
 
   memory_controller_arduino memory_controller (
@@ -93,8 +97,8 @@ module tt_um_zoom_zoom (
       .clk(clk),
       .reset(~rst_n),  // Assuming active-low reset is converted to active-high for submodule
       .rx(rx),                          // RX input from ui_in
-      .speed(13'h1869),                 // Default speed, or you can use another input if needed
-      .set_speed(1'b0),                 // No speed setting input; default to 0
+      .speed(rx_speed),                 // Default speed, or you can use another input if needed
+      .set_speed(set_rx_speed),                 // No speed setting input; default to 0
       .uart_inbound(uart_inbound),      // Output to memory_controller
       .data_received(data_received)     // Output to memory_controller
   );

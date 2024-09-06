@@ -13,7 +13,9 @@ module x3q16 (
 		output reg request,
 		output reg [15:0] data_out,
 
-		output wire tx
+		output wire tx,
+		output wire set_rx_speed,
+		output wire [12:0] rx_speed
 	);
 	reg [15:0] current_address; //!!!CURRENT INSTRUCTION ADDRESS!!!
 	reg [15:0] current_instruction;
@@ -64,8 +66,10 @@ module x3q16 (
 	);
 	
 	reg uart_send, uart_set;
-	reg [15:0]uart_data;
+	reg [12:0]uart_data;
 	wire uart_busy;
+	assign set_rx_speed = uart_set;
+	assign rx_speed = uart_data;
 	uart_tx uart (
 		.clk(clk),
 		.reset(reset),
@@ -190,7 +194,7 @@ module x3q16 (
 						4'b1000: begin //Uart Call
 							if (~uart_busy) begin
 								if (settings[0]) uart_set <= 1'b1; else uart_send <= 1'b1;
-								uart_data <= registers[reg1];
+								uart_data <= registers[reg1][12:0];
 								execution_stage <= 3'b100;
 							end
 						end

@@ -1,16 +1,16 @@
 module uart_tx (
         input clk,
         input reset,
-        input [15:0] data,
+        input [12:0] data,
         input send,
         input set,
         output reg busy,
         output reg tx_reg
     );
 
-    localparam UART_SPEED_DEFAULT = 16'h186a;
+    localparam UART_SPEED_DEFAULT = 13'b1100001101010;
 
-    reg [15:0] cycles_per_bit, cycle_counter;
+    reg [12:0] cycles_per_bit, cycle_counter;
     reg [7:0] data_sending;
     reg [2:0] bit_counter;
     reg [1:0] stage;
