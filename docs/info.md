@@ -9,7 +9,7 @@ You can also include images in this folder and reference them in the markdown. E
 
 ## What is Zoom Zoom?
 
-Zoom Zoom is a custom, 16-bit, barebones CPU. We store memory externally using either a custom parallel connection or SPI. We also have a simple UART protocal implemented on the CPU as well as numerous accelerators(that may not be included in the final design due to size constraints).
+Zoom Zoom is a custom, 16-bit, barebones CPU. We store memory externally using either a custom parallel connection or SPI. We also have a simple UART protocal implemented on the CPU as well as numerous accelerators(that may not be included in the final design due to size constraints).[ (Link to Document with helpful coding info)](https://docs.google.com/spreadsheets/d/1K7lZab2l3JhwbvVq81M2FrRitQbvzn5ftnUr9ZXU4ik/edit?usp=sharing)
 
 ![](block_diagram.png)
 ## Detailed List of Features
