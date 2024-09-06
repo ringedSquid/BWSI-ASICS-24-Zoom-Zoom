@@ -28,9 +28,9 @@ module spi_memory_interface (
 	localparam [7:0] READ = 8'b11000000;
 	localparam [7:0] WRITE = 8'b01000010;
 	localparam [7:0] STORE = 8'b00111100;
-	localparam [15:0] UART_ADDRESS = 16'b111111110100000;
+	localparam [15:0] UART_ADDRESS = 16'b00111111110100000;
 	
-	reg cycle, uart_waiting, cpu_waiting, r_type, sck_reg, store_waiting;
+	reg cycle, uart_waiting, cpu_waiting, r_type, sck_reg, store_waiting, temp, read_temp;
 	assign sck = sck_reg;
 	reg [15:0] data_c, address;
 	reg [7:0] data_u;
@@ -65,10 +65,13 @@ module spi_memory_interface (
 			write_complete <= 1'b0;
 			memory_critical <= 1'b0;
 			cs <= 1'b1;
+			temp <= 1'b0;
+			read_temp <= 1'b0;
 		end else begin
 			memory_ready <= 1'b0;
 			write_complete <= 1'b0;
 			memory_critical <= 1'b0;
+			temp <= 1'b0;
 			if (request) begin
 				cpu_waiting <= 1'b1;
 				data_c <= {memory_write[0], memory_write[1],
@@ -103,6 +106,8 @@ module spi_memory_interface (
 							operation <= 2'b10;
 							active_register <= {address[0], 7'b0, READ};
 							mosi <= READ[0];
+							bit_counter <= 4'b0;
+							bit_count <= 4'b1111;
 							stage <= 3'b110;
 						end else if (store_waiting) begin
 							operation <= 2'b11;
@@ -113,6 +118,8 @@ module spi_memory_interface (
 				end
 				3'b001: begin // read
 					bit_count <= 4'b1111;
+					sck_reg <= 1'b0;
+					temp <= 1'b1;
 					if (section == 2'b01) begin
 						active_register <= {1'b0, address[15:1]};
 						mosi <= address[1];
@@ -124,12 +131,17 @@ module spi_memory_interface (
 						stage <= 3'b101;
 						memory_ready <= 1'b1;
 						cpu_waiting <= 1'b0;
+						cs <= 1'b1;
+						sck_reg <= 1'b0;
 					end
 				end
 				3'b010: begin // write / uart
 					bit_count <= 4'b1111;
+					sck_reg <= 1'b0;
+					cs <= 1'b0;
+					// cycle <= 1'b0;
+					temp <= 1'b1;
 					if (section == 2'b01) begin
-						cs <= 1'b0;
 						active_register <= {(operation == 2'b00) ? UART_ADDRESS[0] : address[0], 7'b0, WRITE};
 						mosi <= WRITE[0];
 					end else if (section == 2'b10) begin
@@ -148,7 +160,7 @@ module spi_memory_interface (
 					active_register[7:0] <= STORE;
 				end
 				3'b100: begin // wren
-					active_register[7:0] <= WREN;
+					active_register <= {8'b0, WREN};
 					mosi <= WREN[0];
 					stage <= 3'b110;
 					bit_count <= 4'b0111;
@@ -161,7 +173,7 @@ module spi_memory_interface (
 				end
 				3'b110: begin // send
 					if (cycle) begin
-						if (sck_reg) begin
+						if (sck_reg && ~(bit_count == bit_counter)) begin
 								sck_reg <= 1'b0;
 								mosi <= active_register[0];
 								bit_counter <= bit_counter + 4'b0001;
@@ -195,6 +207,7 @@ module spi_memory_interface (
 											section <= 2'b01;
 										end else if (section == 2'b01) begin
 											stage <= 3'b111;
+											read_temp <= 1'b1;
 											section <= 2'b10;
 										end
 									end
@@ -210,18 +223,30 @@ module spi_memory_interface (
 									end
 								endcase
 							end else begin
-								sck_reg <= 1'b1;
-								active_register <= active_register >> 1;
+								if (~temp) begin
+									active_register <= {active_register >> 1};
+									sck_reg <= 1'b1;
+								end
 							end
 						end
+					end else if (bit_count == bit_counter) begin
+						if (temp) begin
+							sck_reg <= 1'b1;
+							cycle <= ~cycle;
+						end else begin
+							temp <= 1'b1;
+						end
 					end
-					cycle <= ~cycle;
+					if (~(bit_count == bit_counter)) cycle <= ~cycle;
 				end
 				3'b111: begin // receive
 					if (cycle) begin
-						if (sck_reg) begin
+						if (read_temp) begin
+							active_register[0] <= miso;
+							read_temp <= 1'b0;
+						end else if (sck_reg) begin
 							sck_reg <= 1'b0;
-							active_register <= active_register << 1;
+							active_register <= {active_register << 1};
 							bit_counter <= bit_counter + 4'b0001;
 						end else begin
 							if (bit_counter == bit_count) begin

@@ -5,7 +5,7 @@
 SIM ?= icarus
 TOPLEVEL_LANG ?= verilog
 SRC_DIR = $(PWD)/../src
-PROJECT_SOURCES = tt_um_zoom_zoom.v keccakf1600_statepermutate.v ram_16bit.v x3q16.v x3q16alu.v uart_rx.v memory_controller_arduino.v uart_tx.v
+PROJECT_SOURCES = tt_um_zoom_zoom.v keccakf1600_statepermutate.v ram_16bit.v x3q16.v x3q16alu.v uart_rx.v memory_controller_arduino.v uart_tx.v spi_memory_interface.v
 
 ifneq ($(GATES),yes)
 
