@@ -22,6 +22,9 @@ project:
     - "ram_16bit.v"
     - "x3q16.v"
     - "x3q16alu.v"
+    - "uart_tx.v"
+    - "uart_rx.v"
+    - "memory_controller_arduino.v"
 
 
 # The pinout of your project. Leave unused pins blank. DO NOT delete or add any pins.
