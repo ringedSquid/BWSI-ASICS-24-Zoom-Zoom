@@ -7,7 +7,6 @@ module x3q16 (
 		input write_complete,
 
 		input uart_inbound,
-		input memory_critical,
 
 		output reg [15:0] request_address,
 		output reg request_type,  //0 is read, 1 is writes data_out to address
@@ -107,7 +106,7 @@ module x3q16 (
 				registers[1][0] <= 1'b1;
 			end
 
-			if (memory_critical) begin
+			if (memory_ready) begin
 				registers[1][1] <= 1'b1;
 			end
 			registers[0] <= 16'b0;

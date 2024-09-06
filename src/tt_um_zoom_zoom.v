@@ -17,13 +17,12 @@ module tt_um_zoom_zoom (
   wire memory_ready;
   wire write_complete;
   wire uart_inbound;
-  wire memory_critical;
   wire [15:0] request_address;
   wire request_type;
   wire request;
   wire [15:0] data_out;
   wire [7:0] data_input_pins;
-  wire [15:0] memory_write;
+//   wire [15:0] memory_write;
   wire write_enable, register_enable, read_enable, lower_bit, upper_bit, tx;  
   wire [7:0] data_received;  // Output from uart_rx
 
@@ -59,7 +58,6 @@ module tt_um_zoom_zoom (
       .memory_ready(memory_ready),
       .write_complete(write_complete),
       .uart_inbound(uart_inbound),
-      .memory_critical(memory_critical),
       .request_address(request_address),
       .request_type(request_type),
       .request(request),
@@ -73,7 +71,7 @@ module tt_um_zoom_zoom (
       .request_address(request_address),
       .request_type(request_type),
       .request(request),
-      .memory_write(memory_write),
+      .memory_write(data_out),
       .data_out(memory_in),
       .memory_ready(memory_ready),
       .write_complete(write_complete),
