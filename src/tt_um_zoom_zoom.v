@@ -1,17 +1,17 @@
 `default_nettype none
 
 module tt_um_zoom_zoom (
-    input  wire [7:0] ui_in,   
-    output wire [7:0] uo_out,   
-    input  wire [7:0] uio_in,  
-    output wire [7:0] uio_out,  
-    output wire [7:0] uio_oe,   
-    input  wire       ena,      
-    input  wire       clk,      
-    input  wire       reset     
+    input  wire [7:0] ui_in,    // Dedicated inputs
+    output wire [7:0] uo_out,   // Dedicated outputs
+    input  wire [7:0] uio_in,   // IOs: Input path
+    output wire [7:0] uio_out,  // IOs: Output path
+    output wire [7:0] uio_oe,   // IOs: Enable path (active high: 0=input, 1=output)
+    input  wire       ena,      // always 1 when the design is powered, so you can ignore it
+    input  wire       clk,      // clock
+    input  wire       reset     // reset - low to reset
 );
 
-  wire reset;  
+  wire [7:0] data_output_pins;  
   wire [15:0] memory_in;
   wire memory_ready;
   wire write_complete;
@@ -84,7 +84,7 @@ module tt_um_zoom_zoom (
       .lower_byte_in(lower_byte_in),
       .upper_byte_in(upper_byte_in),
       .data_input_pins(data_input_pins),
-      .data_output_pins(data_output_pins),
+      .data_output_pins(data_output_pins),  // Connect data_output_pins properly
       .iovalue(uio_oe),  
       .uart_inbound(uart_inbound),
       .data_received(data_received)
@@ -93,11 +93,11 @@ module tt_um_zoom_zoom (
   uart_rx uart_receiver (
       .clk(clk),
       .reset(reset),
-      .rx(rx),                          
-      .speed(13'h1869),                //unsure andrew
-      .set_speed(1'b0),                 //unsure, just set it to 0
-      .uart_inbound(uart_inbound),      
-      .data_received(data_received)     
+      .rx(rx),                          // RX input from ui_in
+      .speed(13'h1869),                 // Default speed, or you can use another input if needed
+      .set_speed(1'b0),                 // No speed setting input; default to 0
+      .uart_inbound(uart_inbound),      // Output to memory_controller
+      .data_received(data_received)     // Output to memory_controller
   );
 
   // unused pins
